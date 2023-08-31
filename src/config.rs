@@ -11,6 +11,16 @@ pub struct Config {
 }
 
 impl Config {
+
+  pub fn add_client(&mut self, client: &Client) {
+    // Generate a new id for the client.
+    let mut owned = client.to_owned();
+    let max_id = self.clients.iter().map(|c| c.id).fold(0, |a, b| a.max(b.unwrap()));
+    owned.id = Some(max_id + 1);
+
+    self.clients.push(owned);
+  }
+
   pub fn load<P: AsRef<Path>>(dir: P) -> Result<Config> {
     let paths = ConfigPaths::new(dir);
 
@@ -22,6 +32,10 @@ impl Config {
   }
 
   pub fn save(&self) -> Result<()> {
+    if self.paths.clients.parent().is_some_and(|p| !p.exists()) {
+      std::fs::create_dir_all(self.paths.clients.parent().unwrap())?;
+    }
+
     write_file(&self.paths.clients, &self.clients)?;
     write_file(&self.paths.domains, &self.domains)?;
 
@@ -58,7 +72,7 @@ fn load_file<T: DeserializeOwned, P: AsRef<Path>>(path: &P) -> Result<Vec<T>> {
 fn write_file<T: Serialize, P: AsRef<Path>>(path: &P, value: &Vec<T>) -> Result<()> {
   let file = File::create(path)?;
   let mut writer = BufWriter::new(file);
-  serde_json::to_writer(&mut writer, &value)?;
+  serde_json::to_writer_pretty(&mut writer, &value)?;
 
   Ok(())
 }

@@ -3,6 +3,7 @@ use api::api_service;
 
 mod api;
 mod config;
+mod errors;
 mod model;
 
 #[get("/")]
