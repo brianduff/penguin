@@ -1,6 +1,7 @@
 # Penguin
 
-Penguin provides a simple REST api for configuring domain blocklists for certain client.
+Penguin provides a simple REST api for configuring domain blocklists for certain client that
+are then synced to configuration for a Squid proxy.
 
 
 # APIs:
