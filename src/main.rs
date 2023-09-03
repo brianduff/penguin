@@ -1,4 +1,4 @@
-use actix_web::{App, HttpServer, Responder, HttpResponse, get};
+use actix_web::{App, HttpServer, Responder, get};
 use api::{api_service, DOMAINS_JSON};
 use model::DomainList;
 use restlist::JsonRestList;
