@@ -13,10 +13,10 @@ pub fn api_service() -> Scope {
 
 // Nice, but still somewhat repetitive. It'd be cool if we could avoid
 // all this boilerplate.
+pub static CLIENTS_JSON: &str = "config/clients.json";
 
 mod clients {
   use super::*;
-  static CLIENTS_JSON: &str = "config/clients.json";
 
   pub(super) fn service() -> Scope {
     scope("/client")
@@ -58,12 +58,13 @@ mod clients {
 
 }
 
+pub static DOMAINS_JSON: &str = "config/domains.json";
+
 mod domains {
   use crate::model::DomainList;
 
   use super::*;
 
-  static DOMAINS_JSON: &str = "config/domains.json";
 
   pub(super) fn service() -> Scope {
     scope("/domainlist")

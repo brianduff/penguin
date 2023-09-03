@@ -18,6 +18,11 @@ impl<T: Identifiable + Clone> IdentifiedList<T> {
     }
   }
 
+  /// Finds the item with the given id and returns it if it exists.
+  pub fn get(&self, id: u32) -> Option<&T> {
+    self.items.iter().find(|c| c.id() == Some(id))
+  }
+
   pub fn add(&mut self, item: T) -> &T {
     let mut owned = item.to_owned();
 

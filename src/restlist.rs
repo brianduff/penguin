@@ -6,12 +6,13 @@ use actix_web::web::Json;
 use actix_web::Responder;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
+use crate::file::create_file;
 use crate::list::{Identifiable, IdentifiedList};
 use crate::errors::Result;
 use crate::errors::MyError;
 
 pub struct JsonRestList<T: Identifiable + Clone + Serialize + DeserializeOwned> {
-  list: IdentifiedList<T>,
+  pub list: IdentifiedList<T>,
   path: PathBuf
 }
 
@@ -33,10 +34,7 @@ impl<T: Identifiable + Clone + Serialize + DeserializeOwned> JsonRestList<T> {
   }
 
   fn save(&self) -> anyhow::Result<()> {
-    if self.path.parent().is_some_and(|p| !p.exists()) {
-      std::fs::create_dir_all(self.path.parent().unwrap())?;
-    }
-    let file = File::create(&self.path)?;
+    let file = create_file(&self.path)?;
     let mut writer = BufWriter::new(file);
     serde_json::to_writer_pretty(&mut writer, &self.list.items)?;
 

@@ -161,11 +161,15 @@ Request:
 The implementation generates / maintains a squid configuration directory that's expected
 to be consumed by the `include` directive in `squid.conf`. For the example above, it would generate a directory (say `/etc/penguin/squid.d`) containing (assuming the lease wasn't present):
 
+`domains.conf`:
+```
+acl domains_001 dstdomain "./domains_001.txt"
+acl domains_002 dstdomain "./domains_002.txt"
+```
+
 `client_001.conf`:
 ```
 acl client_001 src 192.168.1.33/255.255.255.255
-acl domains_001 dstdomain "./domains_001.txt"
-acl domains_002 dstdomain "./domains_002.txt"
 http_access deny client_001 domains_001 domains_002
 ```
 
@@ -174,7 +178,6 @@ When the lease is in place, it'd temporarily modify this to:
 `client_001.conf`:
 ```
 acl client_001 src 192.168.1.33/255.255.255.255
-acl domains_001 dstdomain "./domains_001.txt"
 http_access deny client_001 domains_001
 ```
 
