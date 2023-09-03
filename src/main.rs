@@ -2,9 +2,10 @@ use actix_web::{App, HttpServer};
 use api::api_service;
 
 mod api;
-mod config;
+mod list;
 mod errors;
 mod model;
+mod restlist;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
