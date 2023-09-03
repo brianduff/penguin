@@ -5,6 +5,7 @@ mod api;
 mod list;
 mod errors;
 mod model;
+//mod generate;
 mod restlist;
 
 #[actix_web::main]

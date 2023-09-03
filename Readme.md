@@ -12,10 +12,10 @@ GET /v1/client/{id} - gets a client by its id.
 DELETE /v1/client/{id} - removes a client.
 PUT /v1/client/{id} - updates a client
 
-GET /v1/blocklist - gets a list of all blocklists
-POST /v1/blocklist - creates a new blocklist
-GET /v1/blocklist/id - gets a single blocklist
-DELETE /v1/blocklist/id - deletes a single blocklist
+GET /v1/domainlist - gets a list of all blocklists
+POST /v1/domainlist - creates a new blocklist
+GET /v1/domainlist/id - gets a single blocklist
+DELETE /v1/domainlist/id - deletes a single blocklist
 
 GET /v1/client/{id}/rule
 
