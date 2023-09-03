@@ -185,6 +185,9 @@ acl client_001 src 192.168.1.33/255.255.255.255
 http_access deny client_001 domains_001
 ```
 
+Because we're regenerating the configuration anyway, we don't bother to convert these to allow rules,
+instead we just omit the directives altogether.
+
 The implementation also stores its wn configuration data in json format in a separate directory, e.g.:
 
 `/etc/penguin/conf/clients.json`
