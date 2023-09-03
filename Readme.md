@@ -1,11 +1,15 @@
 # Penguin
 
-Penguin provides a simple REST api for configuring domain blocklists for certain client that
-are then synced to configuration for a Squid proxy.
+Penguin provides an API that can be used to create and maintain domain blocklists
+for the Squid proxy.
 
+It has the ability to create named lists of domains, and apply blocking of those
+domains for specific client IP addresses. Additionally, domains can be temporarily
+allowed for a specific client or all clients on a timed lease.
 
 # APIs:
 
+```
 GET /v1/client - gets a list of all clients
 POST /v1/client - creates a new client
 GET /v1/client/{id} - gets a client by its id.
@@ -16,8 +20,8 @@ GET /v1/domainlist - gets a list of all blocklists
 POST /v1/domainlist - creates a new blocklist
 GET /v1/domainlist/id - gets a single blocklist
 DELETE /v1/domainlist/id - deletes a single blocklist
+```
 
-GET /v1/client/{id}/rule
 
 # Example flow:
 
@@ -181,7 +185,7 @@ acl client_001 src 192.168.1.33/255.255.255.255
 http_access deny client_001 domains_001
 ```
 
-The implementation also stores its own configuration data in json format in a separate directory, e.g.:
+The implementation also stores its wn configuration data in json format in a separate directory, e.g.:
 
 `/etc/penguin/conf/clients.json`
 `/etc/penguin/conf/domains.json`
