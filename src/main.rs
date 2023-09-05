@@ -5,6 +5,8 @@ use restlist::JsonRestList;
 
 use crate::{model::Client, api::CLIENTS_JSON, generate::generate_squid_config};
 
+static SQUID_DIR: &str = "squid";
+
 mod api;
 mod file;
 mod list;
@@ -18,7 +20,7 @@ async fn gen() -> errors::Result<impl Responder> {
     let domains = JsonRestList::<DomainList>::load(DOMAINS_JSON)?;
     let clients = JsonRestList::<Client>::load(CLIENTS_JSON)?;
 
-    generate_squid_config(&clients.list, &domains.list)?;
+    generate_squid_config(SQUID_DIR, &clients.list, &domains.list)?;
 
     Ok("Done")
 }
