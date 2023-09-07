@@ -2,8 +2,7 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::path::{Path, PathBuf};
 
-use actix_web::web::Json;
-use actix_web::Responder;
+use axum::Json;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use crate::file::create_file;
@@ -41,14 +40,14 @@ impl<T: Identifiable + Clone + Serialize + DeserializeOwned> JsonRestList<T> {
     Ok(())
   }
 
-  pub fn get_all(&self) -> Result<impl Responder> {
-    Ok(Json(self.list.items.clone()))
+  pub fn get_all(&self) -> Result<Json<Vec<T>>> {
+    Ok(axum::Json(self.list.items.clone()))
   }
 
-  pub fn get(&self, id: u32) -> Result<impl Responder> {
+  pub fn get(&self, id: u32) -> Result<Json<T>> {
     match self.list.items.iter().find(|c| c.id() == Some(id)) {
       Some(c) => {
-        Ok(Json(c.clone()))
+        Ok(axum::Json(c.clone()))
       },
       None => {
         Err(MyError::NotFound)
@@ -56,7 +55,7 @@ impl<T: Identifiable + Clone + Serialize + DeserializeOwned> JsonRestList<T> {
     }
   }
 
-  pub fn put(&mut self, id: u32, item: T) -> Result<impl Responder> {
+  pub fn put(&mut self, id: u32, item: T) -> Result<Json<T>> {
     let result = self.list.update(id, item);
     if let Some(result) = result {
       let rv = result.clone();
@@ -67,7 +66,7 @@ impl<T: Identifiable + Clone + Serialize + DeserializeOwned> JsonRestList<T> {
     }
   }
 
-  pub fn delete(&mut self, id: u32) -> Result<impl Responder> {
+  pub fn delete(&mut self, id: u32) -> Result<Json<T>> {
     let result = self.list.delete(id);
     if let Some(result) = result {
       self.save()?;
@@ -77,7 +76,7 @@ impl<T: Identifiable + Clone + Serialize + DeserializeOwned> JsonRestList<T> {
     }
   }
 
-  pub fn add(&mut self, item: T) -> Result<impl Responder> {
+  pub fn add(&mut self, item: T) -> Result<Json<T>> {
     let result = self.list.add(item).clone();
     self.save()?;
     Ok(Json(result))

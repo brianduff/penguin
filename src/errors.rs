@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use axum::response::IntoResponse;
+
 #[derive(Debug)]
 pub enum MyError {
   Failed(anyhow::Error),
@@ -12,23 +14,21 @@ impl Display for MyError {
     }
 }
 
-impl actix_web::error::ResponseError for MyError {
-    fn status_code(&self) -> actix_web::http::StatusCode {
-        match self {
-            MyError::NotFound => actix_web::http::StatusCode::NOT_FOUND,
-            _ => actix_web::http::StatusCode::INTERNAL_SERVER_ERROR
-        }
-    }
-
-    fn error_response(&self) -> actix_web::HttpResponse<actix_web::body::BoxBody> {
-        actix_web::HttpResponse::new(self.status_code())
-    }
-}
-
 impl From<anyhow::Error> for MyError {
   fn from(err: anyhow::Error) -> MyError {
       MyError::Failed(err)
   }
+}
+
+// Tell axum how to convert `AppError` into a response.
+impl IntoResponse for MyError {
+    fn into_response(self) -> axum::response::Response {
+        (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Something went wrong: {:?}", self),
+        )
+            .into_response()
+    }
 }
 
 pub type Result<T> = std::result::Result<T, MyError>;

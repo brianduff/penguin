@@ -1,5 +1,5 @@
-use actix_web::{App, HttpServer, Responder, get};
-use api::{api_service, DOMAINS_JSON};
+use api::{api_routes, DOMAINS_JSON};
+use axum::{Router, routing::get};
 use model::DomainList;
 use restlist::JsonRestList;
 
@@ -15,24 +15,22 @@ mod model;
 mod generate;
 mod restlist;
 
-#[get("/generate")]
-async fn gen() -> errors::Result<impl Responder> {
+async fn gen() -> errors::Result<String> {
     let domains = JsonRestList::<DomainList>::load(DOMAINS_JSON)?;
     let clients = JsonRestList::<Client>::load(CLIENTS_JSON)?;
 
     generate_squid_config(SQUID_DIR, &clients.list, &domains.list)?;
 
-    Ok("Done")
+    Ok("Done".to_owned())
 }
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| {
-        App::new()
-            .service(api_service())
-            .service(gen)
-    })
-    .bind(("127.0.0.1", 8080))?
-    .run()
-    .await
+#[tokio::main]
+async fn main() {
+    let app = Router::new()
+        .nest("/api", api_routes())
+        .route("/generate", get(gen));
+    axum::Server::bind(&"0.0.0.0:8080".parse().unwrap())
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
 }
