@@ -157,4 +157,10 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
+
+    #[cfg(target_os = "linux")]
+    {
+        libsystemd::daemon::notify(false, NotifyState::Ready);
+    }
+
 }
