@@ -5,6 +5,7 @@ After=network.target network-online.target nss-lookup.target
 [Service]
 Type=notify
 PIDFile=/run/penguin.pid
+User=penguin
 Group=penguin
 RuntimeDirectory=penguin
 ExecStart=/opt/penguin/bin/penguin
