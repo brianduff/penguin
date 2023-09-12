@@ -47,8 +47,8 @@ impl Conf {
   pub fn load() -> anyhow::Result<Conf> {
     Ok(Conf::builder()
         .env()
+        .file("/opt/penguin/penguin.toml")
         .file("penguin.toml")
-        .file("/etc/penguin/pengiun.toml")
         .load()?)
   }
 }
