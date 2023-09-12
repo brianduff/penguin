@@ -43,4 +43,4 @@ sudo usermod -a -G proxy penguin
 sudo cp allow-penguin-hup-proxy /etc/sudoers.d/
 
 sudo service penguin start
-kill -HUP $(cat /run/squid.pid)
+sudo kill -HUP $(cat /run/squid.pid)
