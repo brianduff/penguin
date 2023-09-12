@@ -28,3 +28,7 @@ sudo mkdir -p /opt/penguin/squid_config.d
 sudo cp -f penguin.installed.toml /opt/penguin/penguin.toml
 
 sudo chown -R penguin:penguin /opt/penguin
+
+sudo cp penguin.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl start penguin.service

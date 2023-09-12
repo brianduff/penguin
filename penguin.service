@@ -1,6 +1,16 @@
 [Unit]
-Description=Squid blocklist manager
+Description=Squid blocklist manager (Penguin)
 After=network.target network-online.target nss-lookup.target
 
 [Service]
-Type=
+Type=notify
+PIDFile=/run/penguin.pid
+Group=penguin
+RuntimeDirectory=penguin
+ExecStart=/opt/penguin/bin/penguin
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+NotifyAccess=all
+
+[Install]
+WantedBy=multi-user.target
