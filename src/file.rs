@@ -1,11 +1,14 @@
-use std::{path::Path, fs::File, io::{LineWriter, Write}};
-use anyhow::Result;
+use std::{path::{Path, PathBuf}, fs::File, io::{LineWriter, Write}};
+use anyhow::{anyhow, Result};
+
+pub fn get_parent_or_die(path: &Path) -> anyhow::Result<&Path> {
+  path.parent().ok_or_else(|| anyhow!("Failed to get parent of {:?}", path))
+}
 
 /// Creates a file, ensuring that its parent directories exist.
 pub fn create_file<P: AsRef<Path>>(path: P) -> Result<File> {
-  if path.as_ref().parent().is_some_and(|p| !p.exists()) {
-    std::fs::create_dir_all(path.as_ref().parent().unwrap())?;
-  }
+  let parent = get_parent_or_die(path.as_ref())?;
+  std::fs::create_dir_all(parent)?;
   Ok(File::create(path)?)
 }
 

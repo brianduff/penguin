@@ -8,8 +8,10 @@ use restlist::JsonRestList;
 use tempdir::TempDir;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio_schedule::{every, Job};
+use tower_http::trace::{TraceLayer, self};
+use tracing::Level;
 
-use crate::{model::Client, api::CLIENTS_JSON, generate::generate_squid_config};
+use crate::{model::Client, api::CLIENTS_JSON, generate::generate_squid_config, file::get_parent_or_die};
 
 mod api;
 mod file;
@@ -31,7 +33,7 @@ async fn status() -> errors::Result<String> {
 }
 
 async fn regenerate_config_handler(State(state): State<AppState>) -> errors::Result<String> {
-    regenerate_config(state).await.unwrap();
+    regenerate_config(state).await?;
 
     Ok("Done".to_owned())
 }
@@ -47,9 +49,9 @@ async fn regenerate_config(state: AppState) -> anyhow::Result<String> {
 
     std::fs::create_dir_all(&state.app_config.squid_config_dir)?;
     let dest_dir = std::fs::canonicalize(Path::new(&state.app_config.squid_config_dir))?;
-    let old_dir = dest_dir.parent().unwrap().join("squid_old");
+    let old_dir = get_parent_or_die(&dest_dir)?.join("squid_old");
 
-    println!("Dest dir: {:?} old_dir: {:?}", dest_dir, old_dir);
+    tracing::info!("Regenerating squid config to {:?}", dest_dir);
     if old_dir.exists() {
         std::fs::remove_dir_all(&old_dir)?;
     }
@@ -59,7 +61,7 @@ async fn regenerate_config(state: AppState) -> anyhow::Result<String> {
 
     std::fs::rename(temp_dir, &dest_dir)?;
     *guard += 1;
-    println!("Wrote squid configuration. Generation={}", *guard);
+    tracing::info!("Wrote squid configuration. Generation={}", *guard);
 
     // TODO: trigger a HUP of the squid daemon
 
@@ -84,7 +86,7 @@ async fn possibly_regenerate_config(state: AppState) -> anyhow::Result<String> {
     if lease_found {
         // Save the clients config back out with the expired leases removed.
         clients.save()?;
-        println!("Regenerating due to expired leases");
+        tracing::info!("Regenerating due to expired leases");
         return regenerate_config(state).await;
     }
 
@@ -95,7 +97,10 @@ async fn listen_for_events(state: AppState, mut rx: Receiver<Event>) {
     while let Some(event) = rx.recv().await {
         match event {
             Event::GenerateConfiguration => {
-                regenerate_config(state.clone()).await.unwrap();
+                let result = regenerate_config(state.clone()).await;
+                if let Err(err) = result {
+                    tracing::error!("Failed to generate config: {:?}", err);
+                }
             }
         }
     }
@@ -115,12 +120,20 @@ pub struct AppState {
 
 impl AppState {
     pub async fn regenerate(&self) {
-        self.events.send(Event::GenerateConfiguration).await.unwrap();
+        if let Err(e) = self.events.send(Event::GenerateConfiguration).await {
+            tracing::error!("Failed to send regenerate event: {:?}", e);
+        }
     }
 }
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .init();
+
+    tracing::info!("Starting");
+
     // Set up a configuration change receiver.
     let (tx, rx) = mpsc::channel::<Event>(10);
 
@@ -140,7 +153,9 @@ async fn main() {
     // server was down.
     let state_for_startup = state.clone();
     tokio::spawn(async {
-        regenerate_config(state_for_startup).await.unwrap()
+        if let Err(err) = regenerate_config(state_for_startup).await {
+            tracing::error!("Failed to generate config: {:?}", err);
+        }
     });
 
     // Every 30s regenerate squid configuration for expired leases, and remove
@@ -148,15 +163,21 @@ async fn main() {
     let state_for_cron = state.clone();
     tokio::spawn(async move {
         every(2).seconds().perform(|| async {
-            possibly_regenerate_config(state_for_cron.clone()).await.unwrap();
+            if let Err(err) = possibly_regenerate_config(state_for_cron.clone()).await {
+                tracing::error!("Failed to generate config: {:?}", err);
+            }
         }).await;
     });
 
+
     let app = Router::new()
-        .route("/statusz", get(status))
-        .route("/generate", get(regenerate_config_handler))
-        .nest("/api", api_routes())
-        .with_state(state);
+    .route("/statusz", get(status))
+    .route("/generate", get(regenerate_config_handler))
+    .nest("/api", api_routes())
+    .with_state(state)
+    .layer(TraceLayer::new_for_http()
+        .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
+        .on_response(trace::DefaultOnResponse::new().level(Level::INFO)));
 
     // Spawn a statusz poller. This pings statusz a few times to make sure it's up
     // and sends notify a ready state when it is.
@@ -168,7 +189,6 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
-
 
 }
 
@@ -185,16 +205,15 @@ async fn poll_statusz() {
         if let Ok(resp) = resp {
             if let Ok(text) = resp.text().await {
                 if "OK" == text {
-                    println!("Server listening on port {}", PORT);
+                    tracing::info!("Server listening on port {}", PORT);
                     #[cfg(target_os = "linux")]
                     {
-                        println!("Notifying systemd");
                         libsystemd::daemon::notify(false, &[libsystemd::daemon::NotifyState::Ready]);
                     }
                     return;
                 }
             }
         }
-        println!("Still waiting for server to start.. (attempt {})", tries);
+        tracing::debug!("Still waiting for server to start.. (attempt {})", tries);
     }
 }
