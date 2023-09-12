@@ -13,7 +13,7 @@ CARGO_TARGET_DIR=target/install cargo build --release
 set +e
 sudo useradd -r penguin
 if [ "$?" -eq "9" ]; then
-  echo "Penguin user already exists!"
+  # That's ok
 fi
 if [ "$?" -ne "0" ]; then
   echo "Failed to add penguin user"
