@@ -27,9 +27,6 @@ sudo cp -f penguin.installed.toml /opt/penguin/penguin.toml
 
 sudo chown -R penguin:penguin /opt/penguin
 
-# Install the systemd service for penguin
-sudo cp penguin.service /etc/systemd/system/
-sudo systemctl daemon-reload
 
 # Install squid configuration for penguin and HUP squid to pick it up
 sudo cp penguin.conf /etc/squid/conf.d/
@@ -42,5 +39,10 @@ sudo usermod -a -G proxy penguin
 # Update sudoers to allow the penguin user to HUP squid
 sudo cp allow-penguin-hup-proxy /etc/sudoers.d/
 sudo chmod 0440 /etc/sudoers.d/allow-penguin-hup-proxy
+
+# Install the systemd service for penguin
+sudo cp penguin.service /etc/systemd/system/
+sudo systemctl daemon-reload
+
 sudo service penguin start
 sudo kill -HUP $(cat /run/squid.pid)
