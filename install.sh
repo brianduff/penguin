@@ -5,7 +5,7 @@ DIR=/opt/penguin
 CARGO_TARGET_DIR=target/install cargo build --release
 
 set +e
-sudo systemctl stop penguin-service
+sudo service penguin stop
 set -e
 
 set +e
@@ -42,5 +42,5 @@ sudo usermod -a -G proxy penguin
 # Update sudoers to allow the penguin user to HUP squid
 sudo cp allow-penguin-hup-proxy /etc/sudoers.d/
 
-sudo systemctl start penguin.service
+sudo service penguin start
 kill -HUP $(cat /run/squid.pid)
