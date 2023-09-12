@@ -160,7 +160,7 @@ async fn main() {
 
     #[cfg(target_os = "linux")]
     {
-        libsystemd::daemon::notify(false, NotifyState::Ready);
+        libsystemd::daemon::notify(false, &[libsystemd::daemon::NotifyState::Ready]);
     }
 
 }
