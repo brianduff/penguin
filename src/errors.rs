@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use axum::response::IntoResponse;
 
+
 #[derive(Debug)]
 pub enum MyError {
   Failed(anyhow::Error),
@@ -19,6 +20,7 @@ impl From<anyhow::Error> for MyError {
       MyError::Failed(err)
   }
 }
+
 
 // Tell axum how to convert `AppError` into a response.
 impl IntoResponse for MyError {

@@ -32,7 +32,7 @@ impl<T: Identifiable + Clone + Serialize + DeserializeOwned> JsonRestList<T> {
     })
   }
 
-  fn save(&self) -> anyhow::Result<()> {
+  pub fn save(&self) -> anyhow::Result<()> {
     let file = create_file(&self.path)?;
     let mut writer = BufWriter::new(file);
     serde_json::to_writer_pretty(&mut writer, &self.list.items)?;

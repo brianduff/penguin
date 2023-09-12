@@ -35,7 +35,7 @@ pub fn generate_squid_config<P: AsRef<Path>>(out_dir: P, clients: &IdentifiedLis
     // First, figure out if there are any domains that are temporarily allowed due to a lease rule.
     let now = Utc::now().naive_local();
     let allowed_domains : Vec<_> = client.leases.iter()
-        .filter(|l| l.rule.kind == ALLOW_RULE && l.end_date < now)
+        .filter(|l| l.rule.kind == ALLOW_RULE && l.end_date > now)
         .flat_map(|l| l.rule.domainlists.iter() )
         .collect();
 

@@ -11,5 +11,5 @@ axum = "0.6.20"
 chrono = { version = "0.4.28", features = ["serde"] }
 serde = { version = "1.0.188", features = ["serde_derive"] }
 serde_json = "1.0.105"
-tokio = { version = "1.32.0", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.32.0", features = ["macros", "rt-multi-thread", "time"] }
 tokio_schedule = "0.3.1"
