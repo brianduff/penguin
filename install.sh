@@ -41,6 +41,6 @@ sudo usermod -a -G proxy penguin
 
 # Update sudoers to allow the penguin user to HUP squid
 sudo cp allow-penguin-hup-proxy /etc/sudoers.d/
-
+sudo chmod 0440 /etc/sudoers.d/allow-penguin-hup-proxy
 sudo service penguin start
 sudo kill -HUP $(cat /run/squid.pid)

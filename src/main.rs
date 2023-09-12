@@ -20,6 +20,7 @@ mod errors;
 mod model;
 mod generate;
 mod restlist;
+mod squid;
 
 const PORT: u32 = 8080;
 
@@ -63,7 +64,7 @@ async fn regenerate_config(state: AppState) -> anyhow::Result<String> {
     *guard += 1;
     tracing::info!("Wrote squid configuration. Generation={}", *guard);
 
-    // TODO: trigger a HUP of the squid daemon
+    squid::reload_config();
 
     Ok("Done".to_owned())
 }
