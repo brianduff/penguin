@@ -192,4 +192,3 @@ The implementation also stores its wn configuration data in json format in a sep
 
 `/etc/penguin/conf/clients.json`
 `/etc/penguin/conf/domains.json`
-

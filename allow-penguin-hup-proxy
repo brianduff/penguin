@@ -1,0 +1,1 @@
+penguin ALL=(root) NOPASSWD: /usr/bin/pkill -HUP squid
