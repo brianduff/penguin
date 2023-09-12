@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use chrono::NaiveDateTime;
 use confique::Config;
 use serde::{Deserialize, Serialize};
@@ -50,5 +52,17 @@ impl Conf {
         .file("/opt/penguin/penguin.toml")
         .file("penguin.toml")
         .load()?)
+  }
+
+  pub fn config_path(&self) -> PathBuf {
+    PathBuf::from(&self.config_dir)
+  }
+
+  pub fn clients_json(&self) -> PathBuf {
+    self.config_path().join("clients.json")
+  }
+
+  pub fn domains_json(&self) -> PathBuf {
+    self.config_path().join("domains.json")
   }
 }

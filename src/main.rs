@@ -1,6 +1,6 @@
 use std::{sync::{Arc, Mutex}, path::Path, time::Duration};
 
-use api::{api_routes, DOMAINS_JSON};
+use api::api_routes;
 use axum::{Router, routing::get, extract::State};
 use chrono::Utc;
 use model::{DomainList, Conf};
@@ -11,7 +11,7 @@ use tokio_schedule::{every, Job};
 use tower_http::trace::{TraceLayer, self};
 use tracing::Level;
 
-use crate::{model::Client, api::CLIENTS_JSON, generate::generate_squid_config, file::get_parent_or_die};
+use crate::{model::Client, generate::generate_squid_config, file::get_parent_or_die};
 
 mod api;
 mod file;
@@ -40,8 +40,8 @@ async fn regenerate_config_handler(State(state): State<AppState>) -> errors::Res
 
 async fn regenerate_config(state: AppState) -> anyhow::Result<String> {
     let mut guard = state.gen_config_lock.lock().unwrap();
-    let domains = JsonRestList::<DomainList>::load(DOMAINS_JSON)?;
-    let clients = JsonRestList::<Client>::load(CLIENTS_JSON)?;
+    let domains = JsonRestList::<DomainList>::load(state.app_config.domains_json())?;
+    let clients = JsonRestList::<Client>::load(state.app_config.clients_json())?;
 
     let temp_dir = TempDir::new("penguin-squid")?;
     std::fs::create_dir_all(&temp_dir)?;
@@ -70,7 +70,7 @@ async fn regenerate_config(state: AppState) -> anyhow::Result<String> {
 
 async fn possibly_regenerate_config(state: AppState) -> anyhow::Result<String> {
     // TODO: check lastmod time of the files and skip loading if not changed.
-    let mut clients = JsonRestList::<Client>::load(CLIENTS_JSON)?;
+    let mut clients = JsonRestList::<Client>::load(state.app_config.clients_json())?;
 
     let now = Utc::now().naive_local();
     let mut lease_found: bool = false;
