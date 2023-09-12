@@ -1,4 +1,4 @@
-use std::{sync::{Arc, Mutex}, path::Path};
+use std::{sync::{Arc, Mutex}, path::Path, time::Duration};
 
 use api::{api_routes, DOMAINS_JSON};
 use axum::{Router, routing::get, extract::State};
@@ -19,10 +19,15 @@ mod model;
 mod generate;
 mod restlist;
 
+const PORT: u32 = 8080;
 
 #[derive(Clone, Copy)]
 pub enum Event {
     GenerateConfiguration
+}
+
+async fn status() -> errors::Result<String> {
+    Ok("OK".to_owned())
 }
 
 async fn regenerate_config_handler(State(state): State<AppState>) -> errors::Result<String> {
@@ -147,20 +152,49 @@ async fn main() {
         }).await;
     });
 
-
     let app = Router::new()
+        .route("/statusz", get(status))
         .route("/generate", get(regenerate_config_handler))
         .nest("/api", api_routes())
         .with_state(state);
 
-    axum::Server::bind(&"0.0.0.0:8080".parse().unwrap())
+    // Spawn a statusz poller. This pings statusz a few times to make sure it's up
+    // and sends notify a ready state when it is.
+    tokio::spawn(async {
+        poll_statusz().await;
+    });
+
+    axum::Server::bind(&format!("0.0.0.0:{}", PORT).parse().unwrap())
         .serve(app.into_make_service())
         .await
         .unwrap();
 
-    #[cfg(target_os = "linux")]
-    {
-        libsystemd::daemon::notify(false, &[libsystemd::daemon::NotifyState::Ready]);
-    }
 
+}
+
+static TRIES: u8 = 50;
+
+async fn poll_statusz() {
+    let mut tries = 0;
+    while tries < TRIES {
+        tries += 1;
+
+        tokio::time::sleep(Duration::from_secs(1)).await;
+
+        let resp = reqwest::get(format!("http://0.0.0.0:{}/statusz", PORT)).await;
+        if let Ok(resp) = resp {
+            if let Ok(text) = resp.text().await {
+                if "OK" == text {
+                    println!("Server listening on port {}", PORT);
+                    #[cfg(target_os = "linux")]
+                    {
+                        println!("Notifying systemd");
+                        libsystemd::daemon::notify(false, &[libsystemd::daemon::NotifyState::Ready]);
+                    }
+                    return;
+                }
+            }
+        }
+        println!("Still waiting for server to start.. (attempt {})", tries);
+    }
 }
