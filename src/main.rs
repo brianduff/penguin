@@ -1,10 +1,11 @@
-use std::sync::{Arc, atomic::{AtomicU32, Ordering}, Mutex};
+use std::{sync::{Arc, Mutex}, path::Path};
 
 use api::{api_routes, DOMAINS_JSON};
 use axum::{Router, routing::get, extract::State};
 use chrono::Utc;
 use model::DomainList;
 use restlist::JsonRestList;
+use tempdir::TempDir;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio_schedule::{every, Job};
 
@@ -27,22 +28,38 @@ pub enum Event {
 }
 
 async fn regenerate_config_handler(State(state): State<AppState>) -> errors::Result<String> {
-    regenerate_config(state).await
-}
-
-async fn regenerate_config(state: AppState) -> errors::Result<String> {
-    let mut guard = state.gen_config_lock.lock().unwrap();
-    let domains = JsonRestList::<DomainList>::load(DOMAINS_JSON)?;
-    let clients = JsonRestList::<Client>::load(CLIENTS_JSON)?;
-
-    generate_squid_config(SQUID_DIR, &clients.list, &domains.list)?;
-    *guard += 1;
-    println!("Wrote squid configuration. Generation={}", *guard);
+    regenerate_config(state).await.unwrap();
 
     Ok("Done".to_owned())
 }
 
-async fn possibly_regenerate_config(state: AppState) -> errors::Result<String> {
+async fn regenerate_config(state: AppState) -> anyhow::Result<String> {
+    let mut guard = state.gen_config_lock.lock().unwrap();
+    let domains = JsonRestList::<DomainList>::load(DOMAINS_JSON)?;
+    let clients = JsonRestList::<Client>::load(CLIENTS_JSON)?;
+
+    let temp_dir = TempDir::new("penguin-squid")?;
+    generate_squid_config(&temp_dir, &clients.list, &domains.list)?;
+
+    let cwd = std::env::current_dir()?;
+    let dest_dir = Path::new(&cwd).join(SQUID_DIR);
+    let old_dir = dest_dir.parent().unwrap().join(format!("{}_old", SQUID_DIR));
+
+    println!("Dest dir: {:?} old_dir: {:?}", dest_dir, old_dir);
+    if old_dir.exists() {
+        std::fs::remove_dir_all(&old_dir)?;
+    }
+    std::fs::rename(SQUID_DIR, old_dir)?;
+    std::fs::rename(temp_dir, SQUID_DIR)?;
+    *guard += 1;
+    println!("Wrote squid configuration. Generation={}", *guard);
+
+    // TODO: trigger a HUP of the squid daemon
+
+    Ok("Done".to_owned())
+}
+
+async fn possibly_regenerate_config(state: AppState) -> anyhow::Result<String> {
     // TODO: check lastmod time of the files and skip loading if not changed.
     let mut clients = JsonRestList::<Client>::load(CLIENTS_JSON)?;
 
