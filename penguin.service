@@ -11,6 +11,8 @@ ExecStart=/opt/penguin/bin/penguin
 ExecReload=/bin/kill -HUP $MAINPID
 KillMode=mixed
 NotifyAccess=all
+StandardOutput=file:/opt/penguin/stdout.log
+StandardError=file:/opt/penguin/stderr.log
 
 [Install]
 WantedBy=multi-user.target
