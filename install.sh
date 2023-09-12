@@ -27,4 +27,4 @@ sudo mkdir -p /opt/penguin/conf
 sudo mkdir -p /opt/penguin/squid_config.d
 sudo cp -f penguin.installed.toml /opt/penguin/penguin.toml
 
-chown -R penguin:penguin /opt/penguin
+sudo chown -R penguin:penguin /opt/penguin
