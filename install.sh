@@ -2,12 +2,6 @@
 
 DIR=/opt/penguin
 
-if [ -d "$DIR" ]; then
-  # Take action if $DIR exists. #
-  echo "Already exists in $DIR. Will not reinstall"
-  exit 0
-fi
-
 CARGO_TARGET_DIR=target/install cargo build --release
 
 set +e
