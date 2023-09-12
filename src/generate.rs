@@ -39,7 +39,7 @@ pub fn generate_squid_config<P: AsRef<Path>>(out_dir: P, clients: &IdentifiedLis
         .flat_map(|l| l.rule.domainlists.iter() )
         .collect();
 
-    b.writeln(format!("acl {} src {}/32", client_name, client.ip))?;
+    b.writeln(format!("acl {} src {}", client_name, client.ip))?;
     for domain in client.rules.iter().filter(|r| r.kind == DENY_RULE).flat_map(|r| r.domainlists.iter() ) {
       if !allowed_domains.contains(&domain) {
         b.writeln(format!("http_access deny {} {}", client_name, id_string("domains", domain)))?;
