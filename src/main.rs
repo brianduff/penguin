@@ -102,7 +102,7 @@ pub struct AppState {
     // A mutex on the generated squid configuration
     gen_config_lock: Arc<Mutex<u32>>,
     // A mutex on the local configuration json files
-    config_lock: Arc<Mutex<u32>>,
+//    config_lock: Arc<Mutex<u32>>,
 
     // App config
     app_config: Conf
@@ -122,7 +122,7 @@ async fn main() {
     let state = AppState {
         events: tx,
         gen_config_lock: Arc::new(Mutex::new(0)),
-        config_lock: Arc::new(Mutex::new(0)),
+ //       config_lock: Arc::new(Mutex::new(0)),
         app_config: Conf::load().unwrap()
     };
 

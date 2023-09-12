@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use chrono::NaiveDateTime;
 use confique::Config;
 use serde::{Deserialize, Serialize};
