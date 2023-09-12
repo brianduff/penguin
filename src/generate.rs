@@ -52,9 +52,7 @@ pub fn generate_squid_config<P: AsRef<Path>>(out_dir: P, clients: &IdentifiedLis
 
     for domainlist in domainlists.items.iter() {
       let domainlist_name = id_string("domains", domainlist);
-      b.writeln(format!("acl {} dstdomain \"./{}.txt\"", domainlist_name, domainlist_name))?;
-      let mut b = create_writer(out_dir, format!("{}.txt", domainlist_name))?;
-      b.writeln(domainlist.domains.join("\n"))?;
+      b.writeln(format!("acl {} dstdomain {}", domainlist_name, domainlist.domains.join(" ")))?;
     }
   }
 
