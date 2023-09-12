@@ -1,4 +1,7 @@
+use std::path::Path;
+
 use chrono::NaiveDateTime;
+use confique::Config;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -31,4 +34,23 @@ pub struct DomainList {
   pub name: String,
   #[serde(skip_serializing_if = "Vec::is_empty", default)]
   pub domains: Vec<String>
+}
+
+// App wide configuration
+#[derive(Config, Clone)]
+pub struct Conf {
+  #[config(default = "config")]
+  pub config_dir: String,
+  #[config(default = "squid")]
+  pub squid_config_dir: String
+}
+
+impl Conf {
+  pub fn load() -> anyhow::Result<Conf> {
+    Ok(Conf::builder()
+        .env()
+        .file("penguin.toml")
+        .file("/etc/penguin/pengiun.toml")
+        .load()?)
+  }
 }

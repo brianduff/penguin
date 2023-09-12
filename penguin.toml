@@ -1,0 +1,2 @@
+config_dir = "config"
+squid_config_dir = "out/etc/squid/myconfig.d"

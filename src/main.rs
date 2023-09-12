@@ -3,15 +3,13 @@ use std::{sync::{Arc, Mutex}, path::Path};
 use api::{api_routes, DOMAINS_JSON};
 use axum::{Router, routing::get, extract::State};
 use chrono::Utc;
-use model::DomainList;
+use model::{DomainList, Conf};
 use restlist::JsonRestList;
 use tempdir::TempDir;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio_schedule::{every, Job};
 
 use crate::{model::Client, api::CLIENTS_JSON, generate::generate_squid_config};
-
-static SQUID_DIR: &str = "squid";
 
 mod api;
 mod file;
@@ -39,18 +37,22 @@ async fn regenerate_config(state: AppState) -> anyhow::Result<String> {
     let clients = JsonRestList::<Client>::load(CLIENTS_JSON)?;
 
     let temp_dir = TempDir::new("penguin-squid")?;
+    std::fs::create_dir_all(&temp_dir)?;
     generate_squid_config(&temp_dir, &clients.list, &domains.list)?;
 
-    let cwd = std::env::current_dir()?;
-    let dest_dir = Path::new(&cwd).join(SQUID_DIR);
-    let old_dir = dest_dir.parent().unwrap().join(format!("{}_old", SQUID_DIR));
+    std::fs::create_dir_all(&state.app_config.squid_config_dir)?;
+    let dest_dir = std::fs::canonicalize(Path::new(&state.app_config.squid_config_dir))?;
+    let old_dir = dest_dir.parent().unwrap().join("squid_old");
 
     println!("Dest dir: {:?} old_dir: {:?}", dest_dir, old_dir);
     if old_dir.exists() {
         std::fs::remove_dir_all(&old_dir)?;
     }
-    std::fs::rename(SQUID_DIR, old_dir)?;
-    std::fs::rename(temp_dir, SQUID_DIR)?;
+    if dest_dir.exists() {
+        std::fs::rename(&dest_dir, old_dir)?;
+    }
+
+    std::fs::rename(temp_dir, &dest_dir)?;
     *guard += 1;
     println!("Wrote squid configuration. Generation={}", *guard);
 
@@ -100,7 +102,10 @@ pub struct AppState {
     // A mutex on the generated squid configuration
     gen_config_lock: Arc<Mutex<u32>>,
     // A mutex on the local configuration json files
-    config_lock: Arc<Mutex<u32>>
+    config_lock: Arc<Mutex<u32>>,
+
+    // App config
+    app_config: Conf
 }
 
 impl AppState {
@@ -117,7 +122,8 @@ async fn main() {
     let state = AppState {
         events: tx,
         gen_config_lock: Arc::new(Mutex::new(0)),
-        config_lock: Arc::new(Mutex::new(0))
+        config_lock: Arc::new(Mutex::new(0)),
+        app_config: Conf::load().unwrap()
     };
 
     let state_for_listen = state.clone();
