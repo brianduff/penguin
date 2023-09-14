@@ -59,7 +59,8 @@ export function Clients() {
     }
   };
 
-  async function addClient(newIp: string) {
+  async function addClient() {
+    if (newIp.trim().length === 0) return;
     await createClient({
       id: null,
       ip: newIp,
@@ -94,12 +95,13 @@ export function Clients() {
         </SectionCard>
         <SectionCard>
           <InputGroup
+              onKeyUp={keyAction("Enter", addClient)}
               value={newIp}
               className="pt-input"
               placeholder="IP address of new client"
               rightElement={
                 <Button disabled={newIp.trim().length == 0}
-                    onClick={() => addClient(newIp)}
+                    onClick={addClient}
                     minimal={true}
                     intent="primary">Add
                 </Button>}
@@ -108,4 +110,12 @@ export function Clients() {
       </Section>
     </>
   )
+}
+
+function keyAction(key: string, action: () => void) {
+  return (e: React.KeyboardEvent) => {
+    if (e.key === key) {
+      action()
+    }
+  }
 }
