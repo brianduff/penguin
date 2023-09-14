@@ -173,7 +173,8 @@ async fn main() {
     // A permissive cors policy because we're expecting to be behind a firewall.
     let cors = CorsLayer::new()
         .allow_methods(Any)
-        .allow_origin(Any);
+        .allow_origin(Any)
+        .allow_headers(Any);
 
     let app = Router::new()
         .route("/statusz", get(status))
