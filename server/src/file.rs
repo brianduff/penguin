@@ -1,4 +1,4 @@
-use std::{path::{Path, PathBuf}, fs::File, io::{LineWriter, Write}};
+use std::{path::Path, fs::File, io::{LineWriter, Write}};
 use anyhow::{anyhow, Result};
 
 pub fn get_parent_or_die(path: &Path) -> anyhow::Result<&Path> {
