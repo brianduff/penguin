@@ -3,6 +3,7 @@ import { createClient, getClients } from "./api"
 import { Button, HTMLTable, InputGroup, Section, SectionCard } from "@blueprintjs/core"
 import { css } from '@emotion/react';
 import { useState } from "react";
+import { Desktop } from "@blueprintjs/icons";
 
 function validateIpAddress(text: string) {
   if (text.length == 0) {
@@ -72,7 +73,7 @@ export function Clients() {
 
   return (
     <>
-      <Section title="Clients">
+      <Section title="Clients" icon={<Desktop />}>
         <SectionCard>
           <HTMLTable compact={true} striped={true}>
             <thead>
