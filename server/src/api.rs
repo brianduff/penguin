@@ -59,7 +59,7 @@ use super::*;
   async fn post(State(state): State<AppState>, extract::Json(client): extract::Json<Client>) -> Result<Json<Client>> {
     let mut clients = load(&state)?;
 
-    if clients.list.items.iter().map(|c| &c.ip).find(|v| *v == &client.ip).is_some() {
+    if clients.list.items.iter().map(|c| &c.ip).any(|v| v == &client.ip) {
       return Err(crate::errors::MyError::BadRequest(format!("A client with ip address '{}' already exists.", client.ip)));
     }
 
