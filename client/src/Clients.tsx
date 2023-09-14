@@ -70,6 +70,7 @@ export function Clients() {
     });
 
     queryClient.invalidateQueries({ queryKey: ["clients"]})
+    setNewIp("");
   }
 
   return (
