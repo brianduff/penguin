@@ -75,12 +75,18 @@ export function Clients() {
       <Section title="Clients">
         <SectionCard>
           <HTMLTable compact={true}>
-            {query.data && query.data.map(client => (
-              <tr>
-                <td css={leftAlign}>{client.ip}</td>
-                <td>{client.name}</td>
-              </tr>
-            ))}
+            <thead>
+              <td>IP</td>
+              <td>Name</td>
+            </thead>
+            <tbody>
+              {query.data && query.data.map(client => (
+                <tr key={client.ip}>
+                  <td css={leftAlign}>{client.ip}</td>
+                  <td>{client.name}</td>
+                </tr>
+              ))}
+            </tbody>
           </HTMLTable>
         </SectionCard>
         <SectionCard>
