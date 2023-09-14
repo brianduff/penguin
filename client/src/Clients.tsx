@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "react-query"
 import { createClient, getClients } from "./api"
-import { Button, HTMLTable, Section, SectionCard } from "@blueprintjs/core"
+import { Button, HTMLTable, InputGroup, Section, SectionCard } from "@blueprintjs/core"
 import { css } from '@emotion/react';
 import { useState } from "react";
 
@@ -74,10 +74,12 @@ export function Clients() {
     <>
       <Section title="Clients">
         <SectionCard>
-          <HTMLTable compact={true}>
+          <HTMLTable compact={true} striped={true}>
             <thead>
-              <td>IP</td>
-              <td>Name</td>
+              <tr>
+                <th>Address</th>
+                <th>Name</th>
+              </tr>
             </thead>
             <tbody>
               {query.data && query.data.map(client => (
@@ -90,18 +92,17 @@ export function Clients() {
           </HTMLTable>
         </SectionCard>
         <SectionCard>
-          <input
+          <InputGroup
               value={newIp}
               className="pt-input"
               placeholder="IP address of new client"
-              onChange={updateNewIp}>
-          </input>
-          &nbsp;
-          <Button disabled={newIp.trim().length == 0}
-              onClick={() => addClient(newIp)}
-              minimal={true}
-              intent="primary">Add
-          </Button>
+              rightElement={
+                <Button disabled={newIp.trim().length == 0}
+                    onClick={() => addClient(newIp)}
+                    minimal={true}
+                    intent="primary">Add
+                </Button>}
+              onChange={updateNewIp} />
         </SectionCard>
       </Section>
     </>
