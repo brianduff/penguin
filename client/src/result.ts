@@ -20,7 +20,7 @@ export class Result<T> {
   }
 
   isErr() {
-    return this.error === undefined;
+    return this.error !== undefined;
   }
 
   unwrap() {
