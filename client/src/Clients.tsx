@@ -1,6 +1,6 @@
 import { useQuery } from "react-query"
 import { getClients } from "./api"
-
+import { Button } from "@blueprintjs/core"
 
 export function Clients() {
   const query = useQuery("clients", getClients)
@@ -16,7 +16,7 @@ export function Clients() {
           <li>{client.name} - {client.ip}</li>
         ))}
       </ul>
-      <button>Add Client</button>
+      <Button>Add Client</Button>
     </p>
   )
 }
