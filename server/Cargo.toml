@@ -16,9 +16,10 @@ serde_json = "1.0.105"
 tempdir = "0.3.7"
 tokio = { version = "1.32.0", features = ["macros", "rt-multi-thread", "time"] }
 tokio_schedule = "0.3.1"
-tower-http = { version = "0.4.4", features = ["trace"] }
+tower-http = { version = "0.4.4", features = ["cors", "trace"] }
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
+ts-rs = { version = "7.0.0", features = ["chrono-impl"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 libsystemd = "0.6.0"

@@ -8,7 +8,7 @@ use restlist::JsonRestList;
 use tempdir::TempDir;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio_schedule::{every, Job};
-use tower_http::trace::{TraceLayer, self};
+use tower_http::{trace::{TraceLayer, self}, cors::{CorsLayer, Any}};
 use tracing::Level;
 
 use crate::{model::Client, generate::generate_squid_config, file::get_parent_or_die};
@@ -170,15 +170,20 @@ async fn main() {
         }).await;
     });
 
+    // A permissive cors policy because we're expecting to be behind a firewall.
+    let cors = CorsLayer::new()
+        .allow_methods(Any)
+        .allow_origin(Any);
 
     let app = Router::new()
-    .route("/statusz", get(status))
-    .route("/generate", get(regenerate_config_handler))
-    .nest("/api", api_routes())
-    .with_state(state)
-    .layer(TraceLayer::new_for_http()
-        .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
-        .on_response(trace::DefaultOnResponse::new().level(Level::INFO)));
+        .route("/statusz", get(status))
+        .route("/generate", get(regenerate_config_handler))
+        .nest("/api", api_routes())
+        .with_state(state)
+        .layer(cors)
+        .layer(TraceLayer::new_for_http()
+            .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
+            .on_response(trace::DefaultOnResponse::new().level(Level::INFO)));
 
     // Spawn a statusz poller. This pings statusz a few times to make sure it's up
     // and sends notify a ready state when it is.
