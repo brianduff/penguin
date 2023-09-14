@@ -1,14 +1,16 @@
+import { QueryClient, QueryClientProvider } from 'react-query'
 import './App.css'
+import { Clients } from './Clients';
+
+const queryClient = new QueryClient();
 
 function App() {
-
   return (
-    <>
-      <p>
-        I am penguin
-      </p>
-    </>
+    <QueryClientProvider client={queryClient}>
+      <Clients />
+    </QueryClientProvider>
   )
 }
+
 
 export default App
