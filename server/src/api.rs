@@ -57,7 +57,13 @@ use super::*;
   }
 
   async fn post(State(state): State<AppState>, extract::Json(client): extract::Json<Client>) -> Result<Json<Client>> {
-    let result = load(&state)?.add(client.clone());
+    let mut clients = load(&state)?;
+
+    if clients.list.items.iter().map(|c| &c.ip).find(|v| *v == &client.ip).is_some() {
+      return Err(crate::errors::MyError::BadRequest(format!("A client with ip address '{}' already exists.", client.ip)));
+    }
+
+    let result = clients.add(client.clone());
     state.regenerate().await;
 
     result
@@ -100,6 +106,9 @@ mod domains {
   }
 
   async fn post(State(state): State<AppState>, extract::Json(client): extract::Json<DomainList>) -> Result<Json<DomainList>> {
-    load(&state)?.add(client)
+    let mut clients = load(&state)?;
+
+
+    clients.add(client)
   }
 }
