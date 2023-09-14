@@ -1,22 +1,103 @@
-import { useQuery } from "react-query"
-import { getClients } from "./api"
-import { Button } from "@blueprintjs/core"
+import { useQuery, useQueryClient } from "react-query"
+import { createClient, getClients } from "./api"
+import { Button, HTMLTable, Section, SectionCard } from "@blueprintjs/core"
+import { css } from '@emotion/react';
+import { useState } from "react";
+
+function validateIpAddress(text: string) {
+  if (text.length == 0) {
+    // It's always ok to clear the field
+    return true;
+  }
+  // Every character in the text must be a numeric or a period
+  let periodCount = 0;
+  for (const c of text) {
+    if (!"01234567890.".includes(c)) {
+      return false;
+    }
+    if (c == '.') {
+      periodCount++;
+    }
+  }
+  // Each component of the ip address may be blank or must be
+  // a value from 0-255.
+  let parts = text.split('.');
+  for (const part of parts) {
+    if (part.length > 0) {
+      let numeric = parseInt(part, 10);
+      if (numeric > 255) {
+        return false;
+      }
+      // Don't allow unnecessary leading zeros.
+      if (numeric.toString() !== part) {
+        return false;
+      }
+    }
+  }
+
+  // Don't allow periods with nothing in between
+  if (text.includes('..') || text.includes('...')) {
+    return false;
+  }
+
+  return periodCount <= 3;
+}
 
 export function Clients() {
+  const [newIp, setNewIp] = useState("");
   const query = useQuery("clients", getClients)
+  const queryClient = useQueryClient();
+
+  const leftAlign = css`
+    text-align: left
+  `;
+
+  const updateNewIp = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (validateIpAddress(e.target.value)) {
+      setNewIp(e.target.value);
+    }
+  };
+
+  async function addClient(newIp: string) {
+    await createClient({
+      id: null,
+      ip: newIp,
+      name: `Client with IP ${newIp}`,
+      rules: [],
+      leases: []
+    });
+
+    queryClient.invalidateQueries({ queryKey: ["clients"]})
+  }
 
   return (
-    <p>
-      Clients:
-      <ul css={{
-        listStyle: 'none',
-        paddingInlineStart: '0'
-      }}>
-        {query.data && query.data.map(client => (
-          <li>{client.name} - {client.ip}</li>
-        ))}
-      </ul>
-      <Button>Add Client</Button>
-    </p>
+    <>
+      <Section title="Clients">
+        <SectionCard>
+          <HTMLTable compact={true}>
+            {query.data && query.data.map(client => (
+              <tr>
+                <td css={leftAlign}>{client.ip}</td>
+                <td>{client.name}</td>
+              </tr>
+            ))}
+          </HTMLTable>
+        </SectionCard>
+        <SectionCard>
+          <input
+              value={newIp}
+              className="pt-input"
+              placeholder="IP address of new client"
+              onChange={updateNewIp}>
+          </input>
+          &nbsp;
+          <Button disabled={newIp.trim().length == 0}
+              onClick={() => addClient(newIp)}
+              minimal={true}
+              intent="primary">Add
+          </Button>
+        </SectionCard>
+      </Section>
+    </>
   )
 }
