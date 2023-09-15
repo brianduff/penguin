@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from "react-query"
-import { createClient, getClients } from "./api"
+import { createClient, getClients, getDomainLists } from "./api"
 import { Button, Callout, HTMLTable, InputGroup, Popover, Section, SectionCard } from "@blueprintjs/core"
 import { css } from '@emotion/react';
 import { useState } from "react";
 import { Desktop } from "@blueprintjs/icons";
 import { chain, onKey } from "./events";
+import { Client } from "./bindings/Client";
 
 function validateIpAddress(text: string) {
   if (text.length == 0) {
@@ -92,6 +93,7 @@ export function Clients() {
               <tr>
                 <th>Address</th>
                 <th>Name</th>
+                <th>Blocked domains</th>
               </tr>
             </thead>
             <tbody>
@@ -99,6 +101,7 @@ export function Clients() {
                 <tr key={client.ip}>
                   <td css={leftAlign}>{client.ip}</td>
                   <td>{client.name}</td>
+                  <td><BlockedDomainCount client={client} /></td>
                 </tr>
               ))}
             </tbody>
@@ -127,3 +130,43 @@ export function Clients() {
   )
 }
 
+interface BlockedDomainCountProps {
+  client: Client
+}
+
+function BlockedDomainCount({ client }: BlockedDomainCountProps) {
+  if (!client.rules) {
+    return <span>0</span>
+  }
+  const query = useQuery("domainlists", getDomainLists);
+
+  // Get all the blocked domain lists
+  let domainlists = new Set(client.rules
+      .filter(r => r.kind === "deny_http_access")
+      .flatMap(rule => rule.domainlists));
+
+  // Remove any that are currently temporarily leased. We trust
+  // that the server is pruning expired leases.
+  client.leases
+      .filter(l => l.rule.kind === "allow_http_access")
+      .flatMap(l => l.rule.domainlists)
+      .forEach(id => domainlists.delete(id));
+
+  if (query.data) {
+    query.data.match({
+      ok: lists => {
+        let domains = new Set<string>();
+        for (const dl of lists) {
+          if (dl.id !== null && domainlists.has(dl.id)) {
+            dl.domains.forEach(d => domains.add(d));
+          }
+        }
+        return (<span>{domains.size}</span>);
+      },
+      err: error => {
+
+      }
+    })
+  }
+  return <></>
+}

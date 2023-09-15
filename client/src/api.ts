@@ -1,4 +1,5 @@
 import { Client } from "./bindings/Client";
+import { DomainList } from "./bindings/DomainList";
 import { Result } from "./result";
 
 async function get<T>(path: string) {
@@ -33,4 +34,8 @@ export async function getClients() {
 
 export async function createClient(client: Client) {
   return req<Client>("client", "POST", client)
+}
+
+export async function getDomainLists() {
+  return get<Array<DomainList>>("domainlist")
 }
