@@ -1,10 +1,11 @@
 import { Client } from "./bindings/Client";
+import { Result } from "./result";
 
 async function get<T>(path: string) {
   return await req<T>(path, "GET", undefined);
 }
 
-async function req<T>(path: string, method: string, body: any) {
+async function req<T>(path: string, method: string, body: any) : Promise<Result<T>> {
   let options: RequestInit = {
     method,
   };
@@ -16,8 +17,14 @@ async function req<T>(path: string, method: string, body: any) {
   }
 
   let result = await fetch(`http://localhost:8080/api/v1/${path}`, options);
+
+  if (result.status != 200) {
+    console.log(result);
+    return Result.Err(await result.text());
+  }
+
   let json = await result.json();
-  return json as T;
+  return Result.Ok(json as T);
 }
 
 export async function getClients() {

@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "react-query"
 import { createClient, getClients } from "./api"
-import { Button, HTMLTable, InputGroup, Section, SectionCard } from "@blueprintjs/core"
+import { Button, Callout, Card, HTMLTable, InputGroup, Popover, Section, SectionCard, Toast } from "@blueprintjs/core"
 import { css } from '@emotion/react';
 import { useState } from "react";
 import { Desktop } from "@blueprintjs/icons";
@@ -46,6 +46,7 @@ function validateIpAddress(text: string) {
 
 export function Clients() {
   const [newIp, setNewIp] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const query = useQuery("clients", getClients)
   const queryClient = useQueryClient();
 
@@ -61,16 +62,24 @@ export function Clients() {
 
   async function addClient() {
     if (newIp.trim().length === 0) return;
-    await createClient({
+    setErrorMessage("");
+    let result = await createClient({
       id: null,
       ip: newIp,
       name: `Client with IP ${newIp}`,
       rules: [],
       leases: []
-    });
+    })
+    result.match({
+      ok: (_) => {
+        queryClient.invalidateQueries({ queryKey: ["clients"]})
+        setNewIp("");
+      },
+      err: (err) => {
+        setErrorMessage(err);
+      }
+    })
 
-    queryClient.invalidateQueries({ queryKey: ["clients"]})
-    setNewIp("");
   }
 
   return (
@@ -85,7 +94,7 @@ export function Clients() {
               </tr>
             </thead>
             <tbody>
-              {query.data && query.data.map(client => (
+              {query.data && query.data.isOk() && query.data.unwrap().map(client => (
                 <tr key={client.ip}>
                   <td css={leftAlign}>{client.ip}</td>
                   <td>{client.name}</td>
@@ -95,22 +104,34 @@ export function Clients() {
           </HTMLTable>
         </SectionCard>
         <SectionCard>
+        <Popover enforceFocus={false} isOpen={errorMessage.length > 0} autoFocus={false} placement="bottom" content={<Callout intent="warning">{errorMessage}</Callout>}>
           <InputGroup
-              onKeyUp={keyAction("Enter", addClient)}
+              onKeyUp={chain([() => setErrorMessage(""), keyAction("Enter", addClient)])}
               value={newIp}
               className="pt-input"
               placeholder="IP address of new client"
               rightElement={
-                <Button disabled={newIp.trim().length == 0}
-                    onClick={addClient}
-                    minimal={true}
-                    intent="primary">Add
-                </Button>}
+                  <Button disabled={newIp.trim().length == 0}
+                      onClick={addClient}
+                      minimal={true}
+                      intent="primary">Add
+                  </Button>
+                }
               onChange={updateNewIp} />
+          </Popover>
+
         </SectionCard>
       </Section>
     </>
   )
+}
+
+function chain<T>(actions: ((event: T) => void)[]) {
+  return (e: T) => {
+    for (const action of actions) {
+      action(e);
+    }
+  }
 }
 
 function keyAction(key: string, action: () => void) {
