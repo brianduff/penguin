@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "react-query"
 import { createClient, getClients } from "./api"
-import { Button, Callout, Card, HTMLTable, InputGroup, Popover, Section, SectionCard, Toast } from "@blueprintjs/core"
+import { Button, Callout, HTMLTable, InputGroup, Popover, Section, SectionCard } from "@blueprintjs/core"
 import { css } from '@emotion/react';
 import { useState } from "react";
 import { Desktop } from "@blueprintjs/icons";
