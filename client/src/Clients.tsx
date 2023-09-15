@@ -4,6 +4,7 @@ import { Button, Callout, HTMLTable, InputGroup, Popover, Section, SectionCard }
 import { css } from '@emotion/react';
 import { useState } from "react";
 import { Desktop } from "@blueprintjs/icons";
+import { chain, onKey } from "./events";
 
 function validateIpAddress(text: string) {
   if (text.length == 0) {
@@ -106,7 +107,7 @@ export function Clients() {
         <SectionCard>
         <Popover enforceFocus={false} isOpen={errorMessage.length > 0} autoFocus={false} placement="bottom" content={<Callout intent="warning">{errorMessage}</Callout>}>
           <InputGroup
-              onKeyUp={chain([() => setErrorMessage(""), keyAction("Enter", addClient)])}
+              onKeyUp={chain([() => setErrorMessage(""), onKey("Enter", addClient)])}
               value={newIp}
               className="pt-input"
               placeholder="IP address of new client"
@@ -126,18 +127,3 @@ export function Clients() {
   )
 }
 
-function chain<T>(actions: ((event: T) => void)[]) {
-  return (e: T) => {
-    for (const action of actions) {
-      action(e);
-    }
-  }
-}
-
-function keyAction(key: string, action: () => void) {
-  return (e: React.KeyboardEvent) => {
-    if (e.key === key) {
-      action()
-    }
-  }
-}
