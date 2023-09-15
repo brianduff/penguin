@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "react-query"
 import { createClient, getClients, getDomainLists } from "./api"
-import { Button, Callout, HTMLTable, InputGroup, Popover, Section, SectionCard } from "@blueprintjs/core"
+import { Button, Callout, HTMLTable, Icon, InputGroup, Popover, Section, SectionCard, Tooltip } from "@blueprintjs/core"
 import { css } from '@emotion/react';
 import { useState } from "react";
 import { Desktop } from "@blueprintjs/icons";
@@ -153,7 +153,7 @@ function BlockedDomainCount({ client }: BlockedDomainCountProps) {
       .forEach(id => domainlists.delete(id));
 
   if (query.data) {
-    query.data.match({
+    return query.data.match({
       ok: lists => {
         let domains = new Set<string>();
         for (const dl of lists) {
@@ -164,7 +164,9 @@ function BlockedDomainCount({ client }: BlockedDomainCountProps) {
         return (<span>{domains.size}</span>);
       },
       err: error => {
-
+        return (<Tooltip content={`Can't retrieve domains: ${error}`}>
+          <span><Icon icon="warning-sign" /></span>
+        </Tooltip>);
       }
     })
   }

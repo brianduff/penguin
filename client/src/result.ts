@@ -38,11 +38,11 @@ export class Result<T> {
     return false;
   }
 
-  match(handle: { ok: (value: T) => void, err: (err: string) => void } ) {
+  match<R>(handle: { ok: (value: T) => R, err: (err: string) => R } ): R {
     if (this.isOk()) {
-      handle.ok(this.unwrap());
+      return handle.ok(this.unwrap());
     } else {
-      handle.err(this.error as string);
+      return handle.err(this.error as string);
     }
   }
 }
