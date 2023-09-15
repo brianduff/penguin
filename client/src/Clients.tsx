@@ -135,20 +135,17 @@ interface BlockedDomainCountProps {
 }
 
 function BlockedDomainCount({ client }: BlockedDomainCountProps) {
-  if (!client.rules) {
-    return <span>0</span>
-  }
   const query = useQuery("domainlists", getDomainLists);
 
   // Get all the blocked domain lists
   let domainlists = new Set(client.rules
-      .filter(r => r.kind === "deny_http_access")
+      ?.filter(r => r.kind === "deny_http_access")
       .flatMap(rule => rule.domainlists));
 
   // Remove any that are currently temporarily leased. We trust
   // that the server is pruning expired leases.
   client.leases
-      .filter(l => l.rule.kind === "allow_http_access")
+      ?.filter(l => l.rule.kind === "allow_http_access")
       .flatMap(l => l.rule.domainlists)
       .forEach(id => domainlists.delete(id));
 
