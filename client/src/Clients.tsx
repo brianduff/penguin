@@ -1,12 +1,12 @@
 import { useQuery, useQueryClient } from "react-query"
 import { createClient, getClients, getDomainLists } from "./api"
-import { Button, Callout, HTMLTable, Icon, InputGroup, Popover, Section, SectionCard, Tooltip } from "@blueprintjs/core"
+import { Icon, Section, SectionCard, Tooltip } from "@blueprintjs/core"
 import { css } from '@emotion/react';
 import { useState } from "react";
 import { Desktop } from "@blueprintjs/icons";
-import { chain, onKey } from "./events";
 import { Client } from "./bindings/Client";
 import { InputWithButton } from "./components/InputWithButton";
+import { Table } from "./components/Table";
 
 function validateIpAddress(text: string) {
   if (text.length == 0) {
@@ -89,24 +89,15 @@ export function Clients() {
     <>
       <Section title="Clients" icon={<Desktop />}>
         <SectionCard>
-          <HTMLTable compact={true} striped={true}>
-            <thead>
-              <tr>
-                <th>Address</th>
-                <th>Name</th>
-                <th>Blocked domains</th>
+          <Table columnNames={["Address", "Name", "Blocked domains"]}>
+            {query.data && query.data.isOk() && query.data.unwrap().map(client => (
+              <tr key={client.ip}>
+                <td css={leftAlign}>{client.ip}</td>
+                <td>{client.name}</td>
+                <td><BlockedDomainCount client={client} /></td>
               </tr>
-            </thead>
-            <tbody>
-              {query.data && query.data.isOk() && query.data.unwrap().map(client => (
-                <tr key={client.ip}>
-                  <td css={leftAlign}>{client.ip}</td>
-                  <td>{client.name}</td>
-                  <td><BlockedDomainCount client={client} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </HTMLTable>
+            ))}
+          </Table>
         </SectionCard>
         <SectionCard>
           <InputWithButton

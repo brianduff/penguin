@@ -1,18 +1,14 @@
-import { HTMLTable, Section, SectionCard } from "@blueprintjs/core";
+import { Section, SectionCard } from "@blueprintjs/core";
 import { GlobeNetwork } from "@blueprintjs/icons";
+import { Table } from "./components/Table";
 
 export function Domains() {
   return (
     <Section title="Domain Lists" icon={<GlobeNetwork />}>
       <SectionCard>
-        <HTMLTable compact={true} striped={true}>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Domain count</th>
-            </tr>
-          </thead>
-        </HTMLTable>
+        <Table columnNames={["Name", "Domain count"]}>
+
+        </Table>
       </SectionCard>
     </Section>
   )
