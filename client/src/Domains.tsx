@@ -3,10 +3,16 @@ import { GlobeNetwork } from "@blueprintjs/icons";
 import { Table } from "./components/Table";
 import { getDomainLists } from "./api";
 import { useQuery } from "react-query";
+import { InputWithButton } from "./components/InputWithButton";
+import { useState } from "react";
 
 export function Domains() {
   const query = useQuery("domainlists", getDomainLists);
+  const [newDomain, setNewDomain] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
+  const addDomain = async () => {};
+  const updateNewDomain = (value: string) => {};
 
   return (
     <Section title="Sites" icon={<GlobeNetwork />}>
@@ -19,6 +25,15 @@ export function Domains() {
             </tr>
           ))}
         </Table>
+      </SectionCard>
+      <SectionCard>
+        <InputWithButton
+            value={newDomain}
+            submit={addDomain}
+            onValueUpdated={updateNewDomain}
+            errorMessage={errorMessage}
+            setErrorMessage={setErrorMessage}
+        />
       </SectionCard>
     </Section>
   )
