@@ -1,2 +1,3 @@
 config_dir = "/opt/penguin/conf"
 squid_config_dir = "/opt/penguin/squid_config.d"
+squid_log_dir = "/var/log/squid"
