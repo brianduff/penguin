@@ -87,7 +87,7 @@ export function Clients() {
 
   return (
     <>
-      <Section title="Clients" icon={<Desktop />}>
+      <Section title="Computers" icon={<Desktop />}>
         <SectionCard>
           <Table columnNames={["Address", "Name", "Blocked domains"]}>
             {query.data && query.data.isOk() && query.data.unwrap().map(client => (
