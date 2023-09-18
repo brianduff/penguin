@@ -39,3 +39,7 @@ export async function createClient(client: Client) {
 export async function getDomainLists() {
   return get<Array<DomainList>>("domainlist")
 }
+
+export async function createDomainList(domainList: DomainList) {
+  return req<DomainList>("domainlist", "POST", domainList)
+}
