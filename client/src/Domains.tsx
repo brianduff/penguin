@@ -5,14 +5,69 @@ import { getDomainLists } from "./api";
 import { useQuery } from "react-query";
 import { InputWithButton } from "./components/InputWithButton";
 import { useState } from "react";
+import { Result } from "./result";
+
+function validateDomainName(domainName: string): Result<string> {
+  if (domainName.length <= 1) {
+    return Result.Err("Domain name is too short");
+  }
+
+  let segments = domainName.split(".");
+  if (segments.length < 2) {
+    return Result.Err("Domain must have at least two components");
+  }
+
+  for (var i = 0; i < segments.length; i++) {
+    const segment = segments[i];
+    if (segment.length > 63) {
+      return Result.Err(`Domain segment is too long: '${segment.slice(0, 10)}...'`)
+    }
+    if (segment.length === 0 && i > 0) {
+      return Result.Err(`Empty domain segment not allowed`);
+    }
+    for (const c of segment) {
+      if (isSymbol(c) && !"_-".includes(c)) {
+        return Result.Err(`Domain includes invalid symbol: '${c}'`);
+      }
+    }
+  }
+  return Result.Ok(domainName);
+}
+
+function isSymbol(c: string) {
+  return c.toLocaleUpperCase() === c.toLocaleLowerCase();
+}
 
 export function Domains() {
   const query = useQuery("domainlists", getDomainLists);
   const [newDomain, setNewDomain] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const addDomain = async () => {};
-  const updateNewDomain = (value: string) => {};
+  const addDomain = async () => {
+    validateDomainName(newDomain).match({
+      ok: value => console.log(value),
+      err: msg => setErrorMessage(msg)
+    })
+  };
+  const updateNewDomain = (value: string) => {
+    for (const c of value) {
+      if (isSymbol(c) && !"_-.".includes(c)) {
+        return;
+      }
+    }
+
+    if (value.length > 0 && value.charAt(0) !== '.') {
+        value = '.' + value;
+    }
+
+    if (value.length > 254) {
+      value = value.slice(0, 254);
+    }
+
+    value = value.toLocaleLowerCase();
+
+    setNewDomain(value);
+  };
 
   return (
     <Section title="Sites" icon={<GlobeNetwork />}>
