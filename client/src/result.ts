@@ -15,6 +15,13 @@ export class Result<T> {
     return new Result<T>(undefined, error);
   }
 
+  andThen<U>(op: (value: T) => Result<U>) {
+    this.match({
+      ok: (value) => op(value),
+      err: (err) => Result.Err(err)
+    })
+  }
+
   isOk() {
     return this.result !== undefined;
   }
