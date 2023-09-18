@@ -28,6 +28,7 @@ export function Domains() {
       </SectionCard>
       <SectionCard>
         <InputWithButton
+            prompt="New domain to block"
             value={newDomain}
             submit={addDomain}
             onValueUpdated={updateNewDomain}

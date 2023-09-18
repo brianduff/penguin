@@ -2,6 +2,7 @@ import { Button, Callout, InputGroup, Popover } from "@blueprintjs/core";
 import { chain, onKey } from "../events";
 
 export interface InputWithButtonProps {
+  prompt: string,
   submit: () => Promise<void>,
   value: string,
   onValueUpdated: (newValue: string) => void,
@@ -10,7 +11,7 @@ export interface InputWithButtonProps {
 }
 
 // An input field with a button.
-export function InputWithButton({ submit, value, onValueUpdated, errorMessage, setErrorMessage } : InputWithButtonProps) {
+export function InputWithButton({ prompt, submit, value, onValueUpdated, errorMessage, setErrorMessage } : InputWithButtonProps) {
 
   const update = (e: React.ChangeEvent<HTMLInputElement>) => onValueUpdated(e.target.value);
 
@@ -25,7 +26,7 @@ export function InputWithButton({ submit, value, onValueUpdated, errorMessage, s
           onKeyUp={chain([() => setErrorMessage(""), onKey("Enter", submit)])}
           value={value}
           className="pt-input"
-          placeholder="IP address of new client"
+          placeholder={prompt}
           rightElement={
               <Button disabled={value.trim().length == 0}
                   onClick={submit}
