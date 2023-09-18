@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Desktop } from "@blueprintjs/icons";
 import { chain, onKey } from "./events";
 import { Client } from "./bindings/Client";
+import { InputWithButton } from "./components/InputWithButton";
 
 function validateIpAddress(text: string) {
   if (text.length == 0) {
@@ -56,9 +57,9 @@ export function Clients() {
     text-align: left
   `;
 
-  const updateNewIp = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (validateIpAddress(e.target.value)) {
-      setNewIp(e.target.value);
+  const updateNewIp = (newValue: string) => {
+    if (validateIpAddress(newValue)) {
+      setNewIp(newValue);
     }
   };
 
@@ -108,22 +109,12 @@ export function Clients() {
           </HTMLTable>
         </SectionCard>
         <SectionCard>
-        <Popover enforceFocus={false} isOpen={errorMessage.length > 0} autoFocus={false} placement="bottom" content={<Callout intent="warning">{errorMessage}</Callout>}>
-          <InputGroup
-              onKeyUp={chain([() => setErrorMessage(""), onKey("Enter", addClient)])}
+          <InputWithButton
               value={newIp}
-              className="pt-input"
-              placeholder="IP address of new client"
-              rightElement={
-                  <Button disabled={newIp.trim().length == 0}
-                      onClick={addClient}
-                      minimal={true}
-                      intent="primary">Add
-                  </Button>
-                }
-              onChange={updateNewIp} />
-          </Popover>
-
+              submit={addClient}
+              onValueUpdated={updateNewIp}
+              errorMessage={errorMessage}
+              setErrorMessage={setErrorMessage} />
         </SectionCard>
       </Section>
     </>
