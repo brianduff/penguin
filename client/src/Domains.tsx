@@ -1,11 +1,12 @@
 import { Section, SectionCard } from "@blueprintjs/core";
 import { GlobeNetwork } from "@blueprintjs/icons";
 import { Table } from "./components/Table";
-import { getDomainLists } from "./api";
-import { useQuery } from "react-query";
+import { createDomainList, getDomainLists } from "./api";
+import { useQuery, useQueryClient } from "react-query";
 import { InputWithButton } from "./components/InputWithButton";
 import { useState } from "react";
 import { Result } from "./result";
+import { DomainList } from "./bindings/DomainList";
 
 function validateDomainName(domainName: string): Result<string> {
   if (domainName.length <= 1) {
@@ -38,16 +39,39 @@ function isSymbol(c: string) {
   return c.toLocaleUpperCase() === c.toLocaleLowerCase();
 }
 
+function generateNewDomainListName(lists: DomainList[]) {
+  const prefix = "Domain List";
+  let max = 0;
+  for (const list of lists) {
+    if (list.name === prefix) {
+      max = 1;
+    }
+    if (list.name.startsWith(prefix)) {
+      const suffix = list.name.substring(prefix.length);
+      let suffixNumber = parseInt(suffix);
+      if (!isNaN(suffixNumber)) {
+        max = suffixNumber;
+      }
+    }
+  }
+  if (max > 0) {
+    return prefix + " " + (max + 1);
+  }
+  return prefix;
+}
+
 export function Domains() {
   const query = useQuery("domainlists", getDomainLists);
   const [newDomain, setNewDomain] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const queryClient = useQueryClient();
 
   const addDomain = async () => {
-    validateDomainName(newDomain).match({
-      ok: value => console.log(value),
-      err: msg => setErrorMessage(msg)
-    })
+    let result = await validateDomainName(newDomain)
+        .andThen(submitDomainList);
+    if (result.error) {
+      setErrorMessage(result.error);
+    }
   };
   const updateNewDomain = (value: string) => {
     for (const c of value) {
@@ -68,6 +92,22 @@ export function Domains() {
 
     setNewDomain(value);
   };
+
+  const submitDomainList = async (dl: string) => {
+    let newName = "";
+    if (query.data?.unwrap()) {
+      newName = generateNewDomainListName(query.data?.unwrap());
+    }
+
+    return (await createDomainList({
+      id: null,
+      name: newName,
+      domains: [ dl ]
+    })).andThen(dl => {
+      queryClient.invalidateQueries({ queryKey: [ "domainlists" ]})
+      return Promise.resolve(Result.Ok(dl))
+    })
+  }
 
   return (
     <Section title="Sites" icon={<GlobeNetwork />}>

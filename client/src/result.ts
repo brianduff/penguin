@@ -1,6 +1,6 @@
 export class Result<T> {
-  private readonly result;
-  private readonly error;
+  readonly result;
+  readonly error;
 
   private constructor(result: T | undefined, error: string | undefined) {
     this.result = result;
@@ -15,12 +15,26 @@ export class Result<T> {
     return new Result<T>(undefined, error);
   }
 
-  andThen<U>(op: (value: T) => Result<U>) {
-    this.match({
+  async andThen<U>(op: (value: T) => Promise<Result<U>>) {
+    return this.match({
       ok: (value) => op(value),
-      err: (err) => Result.Err(err)
+      err: (err) => Promise.resolve(Result.Err(err))
     })
   }
+
+  async orElse(op: (error: string) => Promise<Result<T> | void>) {
+    return this.match({
+      ok: (value) => Promise.resolve(Result.Ok(value)),
+      err: (msg) => op(msg)
+    })
+  }
+
+  // andThen<U>(op: (value: T) => Result<U>) {
+  //   return this.match({
+  //     ok: (value) => op(value),
+  //     err: (err) => Result.Err(err)
+  //   })
+  // }
 
   isOk() {
     return this.result !== undefined;
