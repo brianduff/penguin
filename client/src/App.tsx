@@ -8,7 +8,7 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <div css={css`width: 100%`}>
+    <div css={css`width: 100%; height: 100%`}>
       <QueryClientProvider client={queryClient}>
         <AppGrid />
       </QueryClientProvider>
