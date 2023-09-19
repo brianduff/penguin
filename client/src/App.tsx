@@ -17,7 +17,7 @@ function App() {
   ])
 
   const crumbs = [
-    { href: "/", text: "Home" }
+    { href: "/", text: "Home", icon: "home" }
   ]
 
   return (
