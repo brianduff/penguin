@@ -3,16 +3,38 @@ import './App.css'
 import { Clients } from './Clients';
 import { Domains } from './Domains';
 import { css } from '@emotion/react';
+import { RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { Alignment, Breadcrumbs, Button, Navbar } from '@blueprintjs/core';
 
 const queryClient = new QueryClient();
 
 function App() {
+  const router = createBrowserRouter([
+    {
+      path: "/",
+      element: <AppGrid />
+    }
+  ])
+
+  const crumbs = [
+    { href: "/", text: "Home" }
+  ]
+
   return (
-    <div css={css`width: 100%; height: 100%`}>
-      <QueryClientProvider client={queryClient}>
-        <AppGrid />
-      </QueryClientProvider>
-    </div>
+    <>
+      <Navbar fixedToTop={true}>
+        <Navbar.Group align={Alignment.LEFT}>
+          <Navbar.Heading>Penguin</Navbar.Heading>
+          <Navbar.Divider />
+          <Breadcrumbs items={crumbs} />
+        </Navbar.Group>
+      </Navbar>
+      <div css={css`padding: 82px 25px 25px 25px; width: 100%; height: 100%; max-width: 1280px`}>
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      </div>
+    </>
   )
 }
 
