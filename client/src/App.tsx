@@ -5,6 +5,7 @@ import { Domains } from './Domains';
 import { css } from '@emotion/react';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { Alignment, Breadcrumbs, Button, Navbar } from '@blueprintjs/core';
+import { Home } from '@blueprintjs/icons';
 
 const queryClient = new QueryClient();
 
@@ -17,7 +18,7 @@ function App() {
   ])
 
   const crumbs = [
-    { href: "/", text: "Home", icon: "home" }
+    { href: "/", text: "Home", icon: <Home /> }
   ]
 
   return (
