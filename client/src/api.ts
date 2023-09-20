@@ -41,6 +41,10 @@ export async function createClient(client: Client) {
   return req<Client>("client", "POST", client)
 }
 
+export async function updateClient(client: Client) {
+  return req<Client>(`client/${client.id}`, "PUT", client)
+}
+
 export async function getDomainLists() {
   return get<Array<DomainList>>("domainlist")
 }
