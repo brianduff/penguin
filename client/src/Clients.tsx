@@ -1,5 +1,5 @@
-import { useQuery, useQueryClient } from "react-query"
-import { createClient, getClients, getDomainLists } from "./api"
+import { useQueryClient } from "react-query"
+import { createClient } from "./api"
 import { Icon, Section, SectionCard, Tooltip } from "@blueprintjs/core"
 import { css } from '@emotion/react';
 import { useState } from "react";
@@ -7,7 +7,10 @@ import { Desktop } from "@blueprintjs/icons";
 import { Client } from "./bindings/Client";
 import { InputWithButton } from "./components/InputWithButton";
 import { Table } from "./components/Table";
-import { Link } from "react-router-dom";
+import { Link, useLoaderData } from "react-router-dom";
+import { AppGridLoaderData } from "./main";
+import { DomainList } from "./bindings/DomainList";
+import { Result } from "./result";
 
 function validateIpAddress(text: string) {
   if (text.length == 0) {
@@ -49,9 +52,9 @@ function validateIpAddress(text: string) {
 }
 
 export function Clients() {
+  const { clients, domains } = useLoaderData() as AppGridLoaderData;
   const [newIp, setNewIp] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const query = useQuery("clients", getClients)
   const queryClient = useQueryClient();
 
   const leftAlign = css`
@@ -91,11 +94,11 @@ export function Clients() {
       <Section title="Computers" icon={<Desktop />}>
         <SectionCard>
           <Table columnNames={["Address", "Name", "Blocked domains"]}>
-            {query.data && query.data.isOk() && query.data.unwrap().map(client => (
+            {clients.unwrap().map(client => (
               <tr key={client.ip}>
                 <td css={leftAlign}><Link to={`/client/${client.id}`}>{client.ip}</Link></td>
                 <td>{client.name}</td>
-                <td><BlockedDomainCount client={client} /></td>
+                <td><BlockedDomainCount client={client} domains={domains} /></td>
               </tr>
             ))}
           </Table>
@@ -115,11 +118,11 @@ export function Clients() {
 }
 
 interface BlockedDomainCountProps {
-  client: Client
+  client: Client,
+  domains: Result<DomainList[]>,
 }
 
-function BlockedDomainCount({ client }: BlockedDomainCountProps) {
-  const query = useQuery("domainlists", getDomainLists);
+function BlockedDomainCount({ client, domains }: BlockedDomainCountProps) {
 
   // Get all the blocked domain lists
   let domainlists = new Set(client.rules
@@ -133,23 +136,20 @@ function BlockedDomainCount({ client }: BlockedDomainCountProps) {
       .flatMap(l => l.rule.domainlists)
       .forEach(id => domainlists.delete(id));
 
-  if (query.data) {
-    return query.data.match({
-      ok: lists => {
-        let domains = new Set<string>();
-        for (const dl of lists) {
-          if (dl.id !== null && domainlists.has(dl.id)) {
-            dl.domains.forEach(d => domains.add(d));
-          }
+  return domains.match({
+    ok: lists => {
+      let domains = new Set<string>();
+      for (const dl of lists) {
+        if (dl.id !== null && domainlists.has(dl.id)) {
+          dl.domains.forEach(d => domains.add(d));
         }
-        return (<span>{domains.size}</span>);
-      },
-      err: error => {
-        return (<Tooltip content={`Can't retrieve domains: ${error}`}>
-          <span><Icon icon="warning-sign" /></span>
-        </Tooltip>);
       }
-    })
-  }
-  return <></>
+      return (<span>{domains.size}</span>);
+    },
+    err: error => {
+      return (<Tooltip content={`Can't retrieve domains: ${error}`}>
+        <span><Icon icon="warning-sign" /></span>
+      </Tooltip>);
+    }
+  })
 }

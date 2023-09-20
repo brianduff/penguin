@@ -1,12 +1,14 @@
 import { Section, SectionCard } from "@blueprintjs/core";
 import { GlobeNetwork } from "@blueprintjs/icons";
 import { Table } from "./components/Table";
-import { createDomainList, getDomainLists } from "./api";
-import { useQuery, useQueryClient } from "react-query";
+import { createDomainList } from "./api";
+import { useQueryClient } from "react-query";
 import { InputWithButton } from "./components/InputWithButton";
 import { useState } from "react";
 import { Result } from "./result";
 import { DomainList } from "./bindings/DomainList";
+import { useLoaderData } from "react-router-dom";
+import { AppGridLoaderData } from "./main";
 
 function validateDomainName(domainName: string): Result<string> {
   if (domainName.length <= 1) {
@@ -61,7 +63,7 @@ function generateNewDomainListName(lists: DomainList[]) {
 }
 
 export function Domains() {
-  const query = useQuery("domainlists", getDomainLists);
+  const { domains } = useLoaderData() as AppGridLoaderData;
   const [newDomain, setNewDomain] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const queryClient = useQueryClient();
@@ -95,8 +97,8 @@ export function Domains() {
 
   const submitDomainList = async (dl: string) => {
     let newName = "";
-    if (query.data?.unwrap()) {
-      newName = generateNewDomainListName(query.data?.unwrap());
+    if (domains.unwrap()) {
+      newName = generateNewDomainListName(domains.unwrap());
     }
 
     return (await createDomainList({
@@ -113,7 +115,7 @@ export function Domains() {
     <Section title="Sites" icon={<GlobeNetwork />}>
       <SectionCard>
         <Table columnNames={["Name", "Domains"]}>
-          {query.data && query.data.isOk() && query.data.unwrap().map(list => (
+          {domains.unwrap().map(list => (
             <tr key={list.id}>
               <td>{list.name}</td>
               <td><DomainsSummary domains={list.domains} /></td>

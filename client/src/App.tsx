@@ -1,13 +1,11 @@
-import { QueryClient, QueryClientProvider } from 'react-query'
 import './App.css'
 import { Clients } from './Clients';
 import { Domains } from './Domains';
 import { css } from '@emotion/react';
-import { Outlet, useLocation, useMatches, useNavigation } from 'react-router-dom';
+import { Outlet, useMatches } from 'react-router-dom';
 import { Alignment, Breadcrumbs, Navbar } from '@blueprintjs/core';
 import { Home } from '@blueprintjs/icons';
 
-const queryClient = new QueryClient();
 
 function App() {
   const location = useMatches();
@@ -28,9 +26,7 @@ function App() {
         </Navbar.Group>
       </Navbar>
       <div css={css`padding: 82px 25px 25px 25px; width: 100%; height: 100%; max-width: 1280px`}>
-        <QueryClientProvider client={queryClient}>
-          <Outlet />
-        </QueryClientProvider>
+        <Outlet />
       </div>
     </>
   )
@@ -45,8 +41,8 @@ export function AppGrid() {
   `
   return (
     <div css={gridStyle}>
-        <span><Clients /></span>
-        <span><Domains /></span>
+      <span><Clients /></span>
+      <span><Domains /></span>
     </div>
   )
 }

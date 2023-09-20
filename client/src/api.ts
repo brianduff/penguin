@@ -24,6 +24,7 @@ async function req<T>(path: string, method: string, body: any) : Promise<Result<
     return Result.Err(await result.text());
   }
 
+  console.log(`${method} ${path}`)
   let json = await result.json();
   return Result.Ok(json as T);
 }
