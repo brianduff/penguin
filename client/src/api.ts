@@ -32,6 +32,10 @@ export async function getClients() {
   return get<Array<Client>>("client")
 }
 
+export async function getClient(id: number) {
+  return get<Client>(`client/${id}`)
+}
+
 export async function createClient(client: Client) {
   return req<Client>("client", "POST", client)
 }

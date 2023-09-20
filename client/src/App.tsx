@@ -3,20 +3,13 @@ import './App.css'
 import { Clients } from './Clients';
 import { Domains } from './Domains';
 import { css } from '@emotion/react';
-import { RouterProvider, createBrowserRouter } from 'react-router-dom';
-import { Alignment, Breadcrumbs, Button, Navbar } from '@blueprintjs/core';
+import { Outlet } from 'react-router-dom';
+import { Alignment, Breadcrumbs, Navbar } from '@blueprintjs/core';
 import { Home } from '@blueprintjs/icons';
 
 const queryClient = new QueryClient();
 
 function App() {
-  const router = createBrowserRouter([
-    {
-      path: "/",
-      element: <AppGrid />
-    }
-  ])
-
   const crumbs = [
     { href: "/", text: "Home", icon: <Home /> }
   ]
@@ -32,14 +25,14 @@ function App() {
       </Navbar>
       <div css={css`padding: 82px 25px 25px 25px; width: 100%; height: 100%; max-width: 1280px`}>
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <Outlet />
         </QueryClientProvider>
       </div>
     </>
   )
 }
 
-function AppGrid() {
+export function AppGrid() {
   const gridStyle = css`
     display: grid;
     width: 100%;

@@ -7,6 +7,7 @@ import { Desktop } from "@blueprintjs/icons";
 import { Client } from "./bindings/Client";
 import { InputWithButton } from "./components/InputWithButton";
 import { Table } from "./components/Table";
+import { Link } from "react-router-dom";
 
 function validateIpAddress(text: string) {
   if (text.length == 0) {
@@ -92,7 +93,7 @@ export function Clients() {
           <Table columnNames={["Address", "Name", "Blocked domains"]}>
             {query.data && query.data.isOk() && query.data.unwrap().map(client => (
               <tr key={client.ip}>
-                <td css={leftAlign}>{client.ip}</td>
+                <td css={leftAlign}><Link to={`/client/${client.id}`}>{client.ip}</Link></td>
                 <td>{client.name}</td>
                 <td><BlockedDomainCount client={client} /></td>
               </tr>
