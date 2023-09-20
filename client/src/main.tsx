@@ -2,10 +2,10 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App, { AppGrid } from './App.tsx'
 import './index.css'
-import { ViewClient } from './Client.tsx'
+import { ViewClient } from './ViewClient.tsx'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
-import { getClients, getDomainLists } from './api.ts'
+import { getClient, getClients, getDomainLists } from './api.ts'
 import { Result } from './result.ts'
 import { DomainList } from './bindings/DomainList.ts'
 import { Client } from './bindings/Client.ts'
@@ -32,11 +32,15 @@ const router = createBrowserRouter([
           ]);
 
           return { clients, domains }
-        }
+        },
+        id: "appgrid"
       },
       {
         path: "client/:id",
-        element: <ViewClient />
+        element: <ViewClient />,
+        loader: async ({ params }) => {
+          return queryClient.fetchQuery("client", () => getClient(params.id!))
+        }
       }
     ]
   }

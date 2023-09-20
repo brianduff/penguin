@@ -33,7 +33,7 @@ export async function getClients() {
   return get<Array<Client>>("client")
 }
 
-export async function getClient(id: number) {
+export async function getClient(id: string) {
   return get<Client>(`client/${id}`)
 }
 
