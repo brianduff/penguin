@@ -9,7 +9,7 @@ import { getClient, getClients, getDomainLists } from './api.ts'
 import { Result } from './result.ts'
 import { DomainList } from './bindings/DomainList.ts'
 import { Client } from './bindings/Client.ts'
-import { GlobeNetwork, Home } from '@blueprintjs/icons'
+import { Desktop, Home } from '@blueprintjs/icons'
 
 const queryClient = new QueryClient();
 
@@ -49,7 +49,7 @@ const router = createBrowserRouter([
         handle: {
           crumb: (data: any) => {
             let client = (data as Result<Client>).unwrap();
-            return ({ href: `/client/${client.id}`, text: client.name, icon: <GlobeNetwork />})
+            return ({ href: `/client/${client.id}`, text: client.name, icon: <Desktop />})
           }
         }
       }

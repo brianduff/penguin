@@ -4,6 +4,7 @@ import { Domains } from './Domains';
 import { css } from '@emotion/react';
 import { Outlet, useMatches } from 'react-router-dom';
 import { Alignment, Breadcrumbs, Navbar } from '@blueprintjs/core';
+import { CustomBreadcrumb, CustomBreadcrumbCurrent } from './components/CustomBreadcrumb';
 
 
 function App() {
@@ -18,7 +19,7 @@ function App() {
         <Navbar.Group align={Alignment.LEFT}>
           <Navbar.Heading>Penguin</Navbar.Heading>
           <Navbar.Divider />
-          <Breadcrumbs items={crumbs} />
+          <Breadcrumbs breadcrumbRenderer={CustomBreadcrumb} currentBreadcrumbRenderer={CustomBreadcrumbCurrent} items={crumbs} />
         </Navbar.Group>
       </Navbar>
       <div css={css`padding: 82px 25px 25px 25px; width: 100%; height: 100%; max-width: 1280px`}>
