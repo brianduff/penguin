@@ -41,6 +41,7 @@ const router = createBrowserRouter([
         id: "appgrid",
       },
       {
+        id: "client",
         path: "client/:id",
         element: <ViewClient />,
         loader: async ({ params }) => {
@@ -51,6 +52,10 @@ const router = createBrowserRouter([
             let client = (data as Result<Client>).unwrap();
             return ({ href: `/client/${client.id}`, text: client.name, icon: <Desktop />})
           }
+        },
+        action: async ({params, request}) => {
+          console.log("Action with ", { params, request })
+          return null
         }
       }
     ]

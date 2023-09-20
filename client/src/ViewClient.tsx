@@ -1,4 +1,4 @@
-import { useLoaderData } from "react-router-dom";
+import { useFetcher, useLoaderData, useRevalidator, useSubmit } from "react-router-dom";
 import { ErrorMessage } from "./components/ErrorMessage";
 import { Result } from "./result";
 import { Client } from "./bindings/Client";
@@ -25,13 +25,20 @@ interface Props {
 function Grid({ client }: Props) {
   function ClientDetails() {
     const nameRef = useRef<EditableText>(null);
+    const revalidator = useRevalidator();
 
     const onClickEdit = () => {
       nameRef.current?.toggleEditing();
     }
 
     const commitClient = async (newClient: Object) => {
-      return updateClient(newClient as Client);
+      console.log("commit client")
+      return (await updateClient(newClient as Client))
+        .andThen(async value => {
+          console.log("Revalidating")
+          revalidator.revalidate();
+          return Result.Ok(value);
+      });
     };
 
     return (
