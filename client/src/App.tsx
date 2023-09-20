@@ -3,13 +3,17 @@ import './App.css'
 import { Clients } from './Clients';
 import { Domains } from './Domains';
 import { css } from '@emotion/react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation, useMatches, useNavigation } from 'react-router-dom';
 import { Alignment, Breadcrumbs, Navbar } from '@blueprintjs/core';
 import { Home } from '@blueprintjs/icons';
 
 const queryClient = new QueryClient();
 
 function App() {
+  const location = useMatches();
+
+  console.log(location);
+
   const crumbs = [
     { href: "/", text: "Home", icon: <Home /> }
   ]

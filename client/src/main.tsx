@@ -13,7 +13,7 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <AppGrid />
+        element: <AppGrid />,
       },
       {
         path: "/client/:id",
