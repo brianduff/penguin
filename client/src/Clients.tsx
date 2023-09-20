@@ -7,7 +7,7 @@ import { Desktop } from "@blueprintjs/icons";
 import { Client } from "./bindings/Client";
 import { InputWithButton } from "./components/InputWithButton";
 import { Table } from "./components/Table";
-import { Link, useLoaderData } from "react-router-dom";
+import { Link, useRouteLoaderData } from "react-router-dom";
 import { AppGridLoaderData } from "./main";
 import { DomainList } from "./bindings/DomainList";
 import { Result } from "./result";
@@ -52,7 +52,7 @@ function validateIpAddress(text: string) {
 }
 
 export function Clients() {
-  const { clients, domains } = useLoaderData() as AppGridLoaderData;
+  const { clients, domains } = useRouteLoaderData("root") as AppGridLoaderData;
   const [newIp, setNewIp] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const queryClient = useQueryClient();

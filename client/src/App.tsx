@@ -4,16 +4,13 @@ import { Domains } from './Domains';
 import { css } from '@emotion/react';
 import { Outlet, useMatches } from 'react-router-dom';
 import { Alignment, Breadcrumbs, Navbar } from '@blueprintjs/core';
-import { Home } from '@blueprintjs/icons';
 
 
 function App() {
   let matches = useMatches();
-  console.log(matches);
-
-  const crumbs = [
-    { href: "/", text: "Home", icon: <Home /> }
-  ]
+  const crumbs = matches
+      .filter(m => Boolean((m.handle as any)?.crumb))
+      .map(m => (m.handle as any).crumb(m.data));
 
   return (
     <>

@@ -7,7 +7,7 @@ import { InputWithButton } from "./components/InputWithButton";
 import { useState } from "react";
 import { Result } from "./result";
 import { DomainList } from "./bindings/DomainList";
-import { useLoaderData } from "react-router-dom";
+import { useRouteLoaderData } from "react-router-dom";
 import { AppGridLoaderData } from "./main";
 
 function validateDomainName(domainName: string): Result<string> {
@@ -63,7 +63,7 @@ function generateNewDomainListName(lists: DomainList[]) {
 }
 
 export function Domains() {
-  const { domains } = useLoaderData() as AppGridLoaderData;
+  const { domains } = useRouteLoaderData("root") as AppGridLoaderData;
   const [newDomain, setNewDomain] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const queryClient = useQueryClient();

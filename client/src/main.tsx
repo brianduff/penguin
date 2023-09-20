@@ -9,7 +9,7 @@ import { getClient, getClients, getDomainLists } from './api.ts'
 import { Result } from './result.ts'
 import { DomainList } from './bindings/DomainList.ts'
 import { Client } from './bindings/Client.ts'
-import { Database, Home } from '@blueprintjs/icons'
+import { GlobeNetwork, Home } from '@blueprintjs/icons'
 
 const queryClient = new QueryClient();
 
@@ -20,24 +20,25 @@ export interface AppGridLoaderData {
 
 const router = createBrowserRouter([
   {
+    id: "root",
     path: "/",
+    loader: async () => {
+      const [clients, domains] = await Promise.all([
+        queryClient.fetchQuery("clients", getClients),
+        queryClient.fetchQuery("domainlists", getDomainLists)
+      ]);
+
+      return { clients, domains }
+    },
+    handle: {
+      crumb: (_: any) => ({ href: "/", text: "Home", icon: <Home />})
+    },
     element: <App />,
     children: [
       {
         path: "/",
         element: <AppGrid />,
-        loader: async () => {
-          const [clients, domains] = await Promise.all([
-            queryClient.fetchQuery("clients", getClients),
-            queryClient.fetchQuery("domainlists", getDomainLists)
-          ]);
-
-          return { clients, domains }
-        },
         id: "appgrid",
-        handle: {
-          crumb: (data: any) => ({ href: "/", text: "Home", icon: <Home />})
-        }
       },
       {
         path: "client/:id",
@@ -48,7 +49,7 @@ const router = createBrowserRouter([
         handle: {
           crumb: (data: any) => {
             let client = (data as Result<Client>).unwrap();
-            return ({ href: `/client/${client.id}`, text: client.name, icon: <Database />})
+            return ({ href: `/client/${client.id}`, text: client.name, icon: <GlobeNetwork />})
           }
         }
       }
