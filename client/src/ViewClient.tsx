@@ -60,7 +60,7 @@ interface FieldEditorProps {
   onSubmit: (object: Object) => Promise<Result<any>>;
 }
 
-function FieldEditor({ field, original, ref, onSubmit }: FieldEditorProps) {
+function FieldEditor({ field, original, onSubmit }: FieldEditorProps) {
   const selfRef = useRef<EditableText>(null);
 
   const [updatedObject, setUpdatedObject] = useState<Object>(clone(original));
