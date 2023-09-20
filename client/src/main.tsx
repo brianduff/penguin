@@ -9,6 +9,7 @@ import { getClient, getClients, getDomainLists } from './api.ts'
 import { Result } from './result.ts'
 import { DomainList } from './bindings/DomainList.ts'
 import { Client } from './bindings/Client.ts'
+import { Database, Home } from '@blueprintjs/icons'
 
 const queryClient = new QueryClient();
 
@@ -33,13 +34,22 @@ const router = createBrowserRouter([
 
           return { clients, domains }
         },
-        id: "appgrid"
+        id: "appgrid",
+        handle: {
+          crumb: (data: any) => ({ href: "/", text: "Home", icon: <Home />})
+        }
       },
       {
         path: "client/:id",
         element: <ViewClient />,
         loader: async ({ params }) => {
           return queryClient.fetchQuery("client", () => getClient(params.id!))
+        },
+        handle: {
+          crumb: (data: any) => {
+            let client = (data as Result<Client>).unwrap();
+            return ({ href: `/client/${client.id}`, text: client.name, icon: <Database />})
+          }
         }
       }
     ]

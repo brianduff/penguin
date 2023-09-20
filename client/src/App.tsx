@@ -8,9 +8,8 @@ import { Home } from '@blueprintjs/icons';
 
 
 function App() {
-  const location = useMatches();
-
-  console.log(location);
+  let matches = useMatches();
+  console.log(matches);
 
   const crumbs = [
     { href: "/", text: "Home", icon: <Home /> }
