@@ -17,6 +17,8 @@ pub fn api_routes() -> Router<AppState> {
 
 mod clients {
 
+  use crate::errors::MyError;
+
 use super::*;
 
   pub(super) fn routes() -> Router<AppState> {
@@ -27,7 +29,23 @@ use super::*;
       .route("/:id", routing::put(put))
       .route("/:id", routing::delete(delete))
 
+  }
+
+  fn validate(clients: &JsonRestList<Client>, client: &Client) -> Result<()> {
+    if client.name.trim().is_empty() {
+      return Err(MyError::BadRequest("Client name must not be empty".to_owned()));
     }
+
+    if clients.list.items.iter().filter(|c| c.id != client.id).map(|c| &c.ip).any(|v| v == &client.ip) {
+      return Err(MyError::BadRequest(format!("A client with ip address '{}' already exists.", client.ip)));
+    }
+
+    if clients.list.items.iter().filter(|c| c.id != client.id).map(|c| &c.name).any(|v| v == &client.name) {
+      return Err(MyError::BadRequest(format!("A client with name '{}' already exists.", client.name)));
+    }
+
+    Ok(())
+  }
 
   fn load(state: &AppState) -> anyhow::Result<JsonRestList<Client>> {
     JsonRestList::<Client>::load(state.app_config.clients_json())
@@ -43,6 +61,9 @@ use super::*;
 
   async fn put(State(state): State<AppState>, Path(id): Path<u32>,
       extract::Json(client): extract::Json<Client>) -> Result<Json<Client>> {
+    let clients = load(&state)?;
+
+    validate(&clients, &client)?;
     let result = load(&state)?.put(id, client.clone());
     state.regenerate().await;
 
@@ -59,9 +80,11 @@ use super::*;
   async fn post(State(state): State<AppState>, extract::Json(client): extract::Json<Client>) -> Result<Json<Client>> {
     let mut clients = load(&state)?;
 
-    if clients.list.items.iter().map(|c| &c.ip).any(|v| v == &client.ip) {
-      return Err(crate::errors::MyError::BadRequest(format!("A client with ip address '{}' already exists.", client.ip)));
-    }
+    validate(&clients, &client)?;
+
+    // if clients.list.items.iter().map(|c| &c.ip).any(|v| v == &client.ip) {
+    //   return Err(crate::errors::MyError::BadRequest(format!("A client with ip address '{}' already exists.", client.ip)));
+    // }
 
     let result = clients.add(client.clone());
     state.regenerate().await;
