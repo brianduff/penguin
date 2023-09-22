@@ -11,10 +11,6 @@ pub fn api_routes() -> Router<AppState> {
     .nest("/v1/domainlist", domains::routes())
 }
 
-// Nice, but still somewhat repetitive. It'd be cool if we could avoid
-// all this boilerplate.
-//pub static CLIENTS_JSON: &str = "config/clients.json";
-
 mod clients {
 
   use crate::errors::MyError;
@@ -31,18 +27,25 @@ use super::*;
 
   }
 
+  fn check<F>(test: F, message: &str) -> Result<()>
+      where F: FnOnce() -> bool {
+    if !test() {
+      return Err(MyError::BadRequest(message.to_owned()))
+    }
+
+    Ok(())
+  }
+
+  fn other_clients<'a>(clients: &'a JsonRestList<Client>, client: &'a Client) -> Vec<&'a Client> {
+    clients.list.items.iter().filter(|c| c.id != client.id).collect()
+  }
+
   fn validate(clients: &JsonRestList<Client>, client: &Client) -> Result<()> {
-    if client.name.trim().is_empty() {
-      return Err(MyError::BadRequest("Client name must not be empty".to_owned()));
-    }
-
-    if clients.list.items.iter().filter(|c| c.id != client.id).map(|c| &c.ip).any(|v| v == &client.ip) {
-      return Err(MyError::BadRequest(format!("A client with ip address '{}' already exists.", client.ip)));
-    }
-
-    if clients.list.items.iter().filter(|c| c.id != client.id).map(|c| &c.name).any(|v| v == &client.name) {
-      return Err(MyError::BadRequest(format!("A client with name '{}' already exists.", client.name)));
-    }
+    check(|| client.name.trim().is_empty(), "Client name must not be empty")?;
+    check(|| other_clients(clients, client).iter().map(|c| &c.ip).any(|v| v == &client.ip),
+        &format!("A client with ip address '{}' already exists.", client.ip))?;
+    check(|| other_clients(clients, client).iter().map(|c| &c.name).any(|v| v == &client.name),
+        &format!("A client with name '{}' already exists.", client.name))?;
 
     Ok(())
   }
@@ -79,13 +82,7 @@ use super::*;
 
   async fn post(State(state): State<AppState>, extract::Json(client): extract::Json<Client>) -> Result<Json<Client>> {
     let mut clients = load(&state)?;
-
     validate(&clients, &client)?;
-
-    // if clients.list.items.iter().map(|c| &c.ip).any(|v| v == &client.ip) {
-    //   return Err(crate::errors::MyError::BadRequest(format!("A client with ip address '{}' already exists.", client.ip)));
-    // }
-
     let result = clients.add(client.clone());
     state.regenerate().await;
 
