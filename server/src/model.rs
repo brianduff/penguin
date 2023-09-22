@@ -49,7 +49,9 @@ pub struct Conf {
   #[config(default = "squid")]
   pub squid_config_dir: String,
   #[config(default = "logs")]
-  pub squid_log_dir: String
+  pub squid_log_dir: String,
+  #[config(default = false)]
+  pub hup_squid_daemon: bool
 }
 
 impl Conf {

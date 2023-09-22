@@ -64,7 +64,9 @@ async fn regenerate_config(state: AppState) -> anyhow::Result<String> {
     *guard += 1;
     tracing::info!("Wrote squid configuration. Generation={}", *guard);
 
-    squid::reload_config();
+    if state.app_config.hup_squid_daemon {
+        squid::reload_config();
+    }
 
     Ok("Done".to_owned())
 }
