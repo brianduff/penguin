@@ -1,11 +1,11 @@
-import { useFetcher, useLoaderData, useRevalidator, useSubmit } from "react-router-dom";
+import { useLoaderData, useRevalidator } from "react-router-dom";
 import { ErrorMessage } from "./components/ErrorMessage";
 import { Result } from "./result";
 import { Client } from "./bindings/Client";
 import { Button, Callout, EditableText, Popover, Section, SectionCard } from "@blueprintjs/core";
 import { css } from "@emotion/react";
 import { Edit } from "@blueprintjs/icons";
-import { RefObject, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { updateClient } from "./api";
 
 export function ViewClient() {
@@ -13,7 +13,7 @@ export function ViewClient() {
 
 
   return client.match({
-    ok: client => <p><Grid client={client} /></p>,
+    ok: client => <div><Grid client={client} /></div>,
     err: msg => <ErrorMessage message={msg} />
   })
 }
@@ -32,10 +32,8 @@ function Grid({ client }: Props) {
     }
 
     const commitClient = async (newClient: Object) => {
-      console.log("commit client")
       return (await updateClient(newClient as Client))
         .andThen(async value => {
-          console.log("Revalidating")
           revalidator.revalidate();
           return Result.Ok(value);
       });
@@ -46,7 +44,7 @@ function Grid({ client }: Props) {
         <SectionCard>
           <div css={css`display: grid; grid-template-columns: auto 1fr; grid-gap: 10px;`}>
             <span>Name:</span>
-            <FieldEditor onSubmit={commitClient} ref={nameRef} field="name" original={client} />
+            <FieldEditor onSubmit={commitClient} field="name" original={client} />
             <span>IP&nbsp;Address:</span>
             <FieldEditor onSubmit={commitClient} field="ip" original={client} />
           </div>
@@ -63,7 +61,6 @@ function Grid({ client }: Props) {
 interface FieldEditorProps {
   field: string,
   original: Object,
-  ref?: RefObject<EditableText>,
   onSubmit: (object: Object) => Promise<Result<any>>;
 }
 

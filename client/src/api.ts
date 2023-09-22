@@ -17,14 +17,15 @@ async function req<T>(path: string, method: string, body: any) : Promise<Result<
     options.body = JSON.stringify(body);
   }
 
+  console.log(`${method} ${path}`)
   let result = await fetch(`http://localhost:8080/api/v1/${path}`, options);
 
+  console.log("Result: ", result);
   if (result.status != 200) {
     console.log(result);
     return Result.Err(await result.text());
   }
 
-  console.log(`${method} ${path}`)
   let json = await result.json();
   return Result.Ok(json as T);
 }
