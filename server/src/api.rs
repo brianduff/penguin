@@ -4,6 +4,7 @@ use crate::model::Client;
 use crate::restlist::JsonRestList;
 use axum::{routing, extract::{Path, self}, Json};
 use axum::extract::State;
+use crate::errors::MyError;
 
 pub fn api_routes() -> Router<AppState> {
   Router::new()
@@ -12,10 +13,7 @@ pub fn api_routes() -> Router<AppState> {
 }
 
 mod clients {
-
-  use crate::errors::MyError;
-
-use super::*;
+  use super::*;
 
   pub(super) fn routes() -> Router<AppState> {
     Router::new()
@@ -27,10 +25,10 @@ use super::*;
 
   }
 
-  fn check<F>(test: F, message: &str) -> Result<()>
+  fn check<F, S: Into<String>>(test: F, message: S) -> Result<()>
       where F: FnOnce() -> bool {
     if !test() {
-      return Err(MyError::BadRequest(message.to_owned()))
+      return Err(MyError::BadRequest(message.into()))
     }
 
     Ok(())
@@ -43,9 +41,9 @@ use super::*;
   fn validate(clients: &JsonRestList<Client>, client: &Client) -> Result<()> {
     check(|| client.name.trim().is_empty(), "Client name must not be empty")?;
     check(|| other_clients(clients, client).iter().map(|c| &c.ip).any(|v| v == &client.ip),
-        &format!("A client with ip address '{}' already exists.", client.ip))?;
+        format!("A client with ip address '{}' already exists.", client.ip))?;
     check(|| other_clients(clients, client).iter().map(|c| &c.name).any(|v| v == &client.name),
-        &format!("A client with name '{}' already exists.", client.name))?;
+        format!("A client with name '{}' already exists.", client.name))?;
 
     Ok(())
   }
