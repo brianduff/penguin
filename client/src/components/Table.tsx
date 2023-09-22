@@ -15,7 +15,7 @@ export function Table({ columnNames, children }: TableProps) {
     <HTMLTable compact={true} striped={true}>
       <thead>
         <tr>
-          {columnNames.map(c => <th id={c}>{c}</th>)}
+          {columnNames.map(c => <th key={c}>{c}</th>)}
         </tr>
       </thead>
       <tbody>
