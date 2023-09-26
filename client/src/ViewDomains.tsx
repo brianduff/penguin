@@ -1,4 +1,4 @@
-import { useLoaderData } from "react-router-dom";
+import { useLoaderData, useRevalidator } from "react-router-dom";
 import { Result } from "./result";
 import { DomainList } from "./bindings/DomainList";
 import { Delete, GlobeNetwork } from "@blueprintjs/icons";
@@ -6,14 +6,25 @@ import { Button, Section, SectionCard } from "@blueprintjs/core";
 import { Table } from "./components/Table";
 import { useState } from "react";
 import { DNSInputField } from "./Domains";
+import { clone } from "./ViewClient";
+import { updateDomainList } from "./api";
 
 export function ViewDomains() {
   const domains = useLoaderData() as Result<DomainList>;
   const [errorMessage, setErrorMessage] = useState("");
   const [newDomain, setNewDomain] = useState("");
+  const revalidator = useRevalidator();
+
+  const revalidate = async (value: DomainList) => {
+    setNewDomain("");
+    revalidator.revalidate();
+    return Result.Ok(value);
+  }
 
   const submitDomain = async (domain: string) => {
-    return Result.Ok("");
+    const newDomain = clone(domains.unwrap());
+    newDomain.domains.push(domain);
+    return await (await updateDomainList(newDomain)).andThen(revalidate);
   };
 
   return (

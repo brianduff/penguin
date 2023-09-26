@@ -125,6 +125,6 @@ function FieldEditor({ field, original, onSubmit }: FieldEditorProps) {
   );
 }
 
-function clone<T>(value: T) {
+export function clone<T>(value: T) {
   return Object.assign(Object.create(Object.getPrototypeOf(value)), value) as T;
 }

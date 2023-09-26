@@ -61,3 +61,7 @@ export async function getDomainList(id: string) {
 export async function createDomainList(domainList: DomainList) {
   return req<DomainList>("domainlist", "POST", domainList)
 }
+
+export async function updateDomainList(domainList: DomainList) {
+  return req<DomainList>(`domainlist/${domainList.id}`, "PUT", domainList)
+}
