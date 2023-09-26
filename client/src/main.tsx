@@ -5,11 +5,12 @@ import './index.css'
 import { ViewClient } from './ViewClient.tsx'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
-import { getClient, getClients, getDomainLists } from './api.ts'
+import { getClient, getClients, getDomainList, getDomainLists } from './api.ts'
 import { Result } from './result.ts'
 import { DomainList } from './bindings/DomainList.ts'
 import { Client } from './bindings/Client.ts'
-import { Desktop, Home } from '@blueprintjs/icons'
+import { Desktop, Globe, GlobeNetwork, Home } from '@blueprintjs/icons'
+import { ViewDomains } from './ViewDomains.tsx'
 
 const queryClient = new QueryClient();
 
@@ -52,10 +53,20 @@ const router = createBrowserRouter([
             let client = (data as Result<Client>).unwrap();
             return ({ href: `/client/${client.id}`, text: client.name, icon: <Desktop />})
           }
+        }
+      },
+      {
+        id: "domains",
+        path: "domains/:id",
+        element: <ViewDomains />,
+        loader: async ({ params }) => {
+          return queryClient.fetchQuery("domain", () => getDomainList(params.id!))
         },
-        action: async ({params, request}) => {
-          console.log("Action with ", { params, request })
-          return null
+        handle: {
+          crumb: (data: any) => {
+            let domainList = (data as Result<DomainList>).unwrap();
+            return ({ href: `/client/${domainList.id}`, text: domainList.name, icon: <GlobeNetwork />})
+          }
         }
       }
     ]

@@ -7,7 +7,7 @@ import { InputWithButton } from "./components/InputWithButton";
 import { useState } from "react";
 import { Result } from "./result";
 import { DomainList } from "./bindings/DomainList";
-import { useRouteLoaderData } from "react-router-dom";
+import { useRouteLoaderData, Link } from "react-router-dom";
 import { AppGridLoaderData } from "./main";
 
 function validateDomainName(domainName: string): Result<string> {
@@ -117,7 +117,7 @@ export function Domains() {
         <Table columnNames={["Name", "Domains"]}>
           {domains.unwrap().map(list => (
             <tr key={list.id}>
-              <td>{list.name}</td>
+              <td><Link to={`/domains/${list.id}`}>{list.name}</Link></td>
               <td><DomainsSummary domains={list.domains} /></td>
             </tr>
           ))}
