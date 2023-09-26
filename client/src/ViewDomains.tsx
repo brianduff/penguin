@@ -6,7 +6,7 @@ import { Button, Section, SectionCard } from "@blueprintjs/core";
 import { Table } from "./components/Table";
 import { useState } from "react";
 import { DNSInputField } from "./Domains";
-import { clone } from "./components/FieldEditor";
+import { FieldEditor, clone } from "./components/FieldEditor";
 import { updateDomainList } from "./api";
 import { css } from "@emotion/react";
 
@@ -37,12 +37,16 @@ export function ViewDomains() {
     return await (await updateDomainList(newDomain)).andThen(revalidate);
   };
 
+  const commitList = async (dl: Object) => {
+    return Result.Err("Sorry I can't do that dave.");
+  }
+
   return (
     <Section title="Entries" icon={<GlobeNetwork />}>
       <SectionCard>
         <div css={css`display: grid; grid-template-columns: auto 1fr; grid-gap: 10px;`}>
           <span>Name:</span>
-          {/* <FieldEditor onSubmit={commitClient} field="name" original={client} /> */}
+          <FieldEditor onSubmit={commitList} field="name" original={domains.unwrap()} />
         </div>
 
 
