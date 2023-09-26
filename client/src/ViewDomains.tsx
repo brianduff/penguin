@@ -23,6 +23,9 @@ export function ViewDomains() {
 
   const submitDomain = async (domain: string) => {
     const newDomain = clone(domains.unwrap());
+    if (newDomain.domains === undefined) {
+      newDomain.domains = [];
+    }
     newDomain.domains.push(domain);
     return await (await updateDomainList(newDomain)).andThen(revalidate);
   };

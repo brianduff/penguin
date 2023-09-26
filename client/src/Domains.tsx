@@ -159,15 +159,18 @@ export function DNSInputField({ newDomain, setNewDomain, errorMessage, setErrorM
 const MAX_SUMMARY_DOMAINS = 3;
 
 interface DomainsSummaryProps {
-  domains: Array<string>
+  domains: Array<string> | undefined
 }
 function DomainsSummary({ domains }: DomainsSummaryProps) {
-  let result = domains.slice(0, MAX_SUMMARY_DOMAINS).join(", ");
+  if (domains) {
+    let result = domains.slice(0, MAX_SUMMARY_DOMAINS).join(", ");
 
-  let diff = domains.length - MAX_SUMMARY_DOMAINS;
-  if (diff > 0) {
-    result += `, and ${diff} more.`;
+    let diff = domains.length - MAX_SUMMARY_DOMAINS;
+    if (diff > 0) {
+      result += `, and ${diff} more.`;
+    }
+    return <span>{result}</span>
   }
 
-  return <span>{result}</span>
+  return <span></span>
 }
