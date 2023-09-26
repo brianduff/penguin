@@ -68,33 +68,6 @@ export function Domains() {
   const [errorMessage, setErrorMessage] = useState("");
   const queryClient = useQueryClient();
 
-  const addDomain = async () => {
-    let result = await validateDomainName(newDomain)
-        .andThen(submitDomainList);
-    if (result.error) {
-      setErrorMessage(result.error);
-    }
-  };
-  const updateNewDomain = (value: string) => {
-    for (const c of value) {
-      if (isSymbol(c) && !"_-.".includes(c)) {
-        return;
-      }
-    }
-
-    if (value.length > 0 && value.charAt(0) !== '.') {
-        value = '.' + value;
-    }
-
-    if (value.length > 254) {
-      value = value.slice(0, 254);
-    }
-
-    value = value.toLocaleLowerCase();
-
-    setNewDomain(value);
-  };
-
   const submitDomainList = async (dl: string) => {
     let newName = "";
     if (domains.unwrap()) {
@@ -124,17 +97,61 @@ export function Domains() {
         </Table>
       </SectionCard>
       <SectionCard>
-        <InputWithButton
-            prompt="New domain to block"
-            value={newDomain}
-            submit={addDomain}
-            onValueUpdated={updateNewDomain}
-            errorMessage={errorMessage}
-            setErrorMessage={setErrorMessage}
-        />
+        <DNSInputField
+          newDomain={newDomain}
+          setNewDomain={setNewDomain}
+          errorMessage={errorMessage}
+          setErrorMessage={setErrorMessage}
+          submitDomain={submitDomainList} />
       </SectionCard>
     </Section>
   )
+}
+
+interface DNSInputFieldProps {
+  newDomain: string,
+  setNewDomain: (value: string) => void;
+  errorMessage: string,
+  setErrorMessage: (value: string) => void;
+  submitDomain: (value: string) => Promise<Result<any>>;
+}
+
+export function DNSInputField({ newDomain, setNewDomain, errorMessage, setErrorMessage, submitDomain }: DNSInputFieldProps) {
+  const addDomain = async () => {
+    let result = await validateDomainName(newDomain)
+        .andThen(submitDomain);
+    if (result.error) {
+      setErrorMessage(result.error);
+    }
+  };
+
+  const updateNewDomain = (value: string) => {
+    for (const c of value) {
+      if (isSymbol(c) && !"_-.".includes(c)) {
+        return;
+      }
+    }
+
+    if (value.length > 0 && value.charAt(0) !== '.') {
+        value = '.' + value;
+    }
+
+    if (value.length > 254) {
+      value = value.slice(0, 254);
+    }
+
+    value = value.toLocaleLowerCase();
+
+    setNewDomain(value);
+  };
+
+  return <InputWithButton
+    prompt="New domain to block"
+    value={newDomain}
+    submit={addDomain}
+    onValueUpdated={updateNewDomain}
+    errorMessage={errorMessage}
+    setErrorMessage={setErrorMessage} />
 }
 
 const MAX_SUMMARY_DOMAINS = 3;

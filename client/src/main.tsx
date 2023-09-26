@@ -9,7 +9,7 @@ import { getClient, getClients, getDomainList, getDomainLists } from './api.ts'
 import { Result } from './result.ts'
 import { DomainList } from './bindings/DomainList.ts'
 import { Client } from './bindings/Client.ts'
-import { Desktop, Globe, GlobeNetwork, Home } from '@blueprintjs/icons'
+import { Desktop, GlobeNetwork, Home } from '@blueprintjs/icons'
 import { ViewDomains } from './ViewDomains.tsx'
 
 const queryClient = new QueryClient();
