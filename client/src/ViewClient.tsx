@@ -1,12 +1,12 @@
-import { useLoaderData, useRevalidator } from "react-router-dom";
+import { useLoaderData, useNavigate, useRevalidator } from "react-router-dom";
 import { ErrorMessage } from "./components/ErrorMessage";
 import { Result } from "./result";
 import { Client } from "./bindings/Client";
 import { Button, Callout, EditableText, Popover, Section, SectionCard } from "@blueprintjs/core";
 import { css } from "@emotion/react";
-import { Edit } from "@blueprintjs/icons";
+import { Delete, Edit } from "@blueprintjs/icons";
 import { useRef, useState } from "react";
-import { updateClient } from "./api";
+import { deleteClient, updateClient } from "./api";
 
 export function ViewClient() {
   const client = useLoaderData() as Result<Client>;
@@ -26,21 +26,37 @@ function Grid({ client }: Props) {
   function ClientDetails() {
     const nameRef = useRef<EditableText>(null);
     const revalidator = useRevalidator();
+    const navigate = useNavigate();
 
     const onClickEdit = () => {
       nameRef.current?.toggleEditing();
     }
 
+    const revalidate = async (value: Client) => {
+      revalidator.revalidate();
+      return Result.Ok(value);
+    }
+
     const commitClient = async (newClient: Object) => {
-      return (await updateClient(newClient as Client))
-        .andThen(async value => {
-          revalidator.revalidate();
-          return Result.Ok(value);
-      });
+      return (await updateClient(newClient as Client)).andThen(revalidate);
     };
 
+    const navigateToClients = async (value: unknown) => {
+      navigate("/");
+      return Result.Ok(value);
+    }
+
+    const onClickDelete = async () => {
+      return (await (await deleteClient(client)).andThen(revalidate)).andThen(navigateToClients);
+    }
+
     return (
-      <Section title="Details" rightElement={<Button onClick={onClickEdit} icon={<Edit />}></Button>}>
+      <Section title="Details" rightElement={
+        <>
+          <Button onClick={onClickDelete} icon={<Delete />} />
+          <Button onClick={onClickEdit} icon={<Edit />} />
+        </>
+        }>
         <SectionCard>
           <div css={css`display: grid; grid-template-columns: auto 1fr; grid-gap: 10px;`}>
             <span>Name:</span>

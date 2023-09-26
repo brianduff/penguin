@@ -46,6 +46,10 @@ export async function updateClient(client: Client) {
   return req<Client>(`client/${client.id}`, "PUT", client)
 }
 
+export async function deleteClient(client: Client) {
+  return req<Client>(`client/${client.id}`, "DELETE", client)
+}
+
 export async function getDomainLists() {
   return get<Array<DomainList>>("domainlist")
 }
