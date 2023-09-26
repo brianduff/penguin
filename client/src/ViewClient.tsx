@@ -2,11 +2,12 @@ import { useLoaderData, useNavigate, useRevalidator } from "react-router-dom";
 import { ErrorMessage } from "./components/ErrorMessage";
 import { Result } from "./result";
 import { Client } from "./bindings/Client";
-import { Button, Callout, EditableText, Popover, Section, SectionCard } from "@blueprintjs/core";
+import { Button, EditableText, Section, SectionCard } from "@blueprintjs/core";
 import { css } from "@emotion/react";
 import { Delete, Edit } from "@blueprintjs/icons";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { deleteClient, updateClient } from "./api";
+import { FieldEditor } from "./components/FieldEditor";
 
 export function ViewClient() {
   const client = useLoaderData() as Result<Client>;
@@ -72,59 +73,4 @@ function Grid({ client }: Props) {
   return (
     <ClientDetails />
   )
-}
-
-interface FieldEditorProps {
-  field: string,
-  original: Object,
-  onSubmit: (object: Object) => Promise<Result<any>>;
-}
-
-function FieldEditor({ field, original, onSubmit }: FieldEditorProps) {
-  const selfRef = useRef<EditableText>(null);
-
-  const [updatedObject, setUpdatedObject] = useState<Object>(clone(original));
-  const [errorMessage, setErrorMessage] = useState<string>("");
-
-  return (
-    <Popover
-        enforceFocus={false}
-        isOpen={errorMessage.length > 0}
-        autoFocus={false}
-        placement="bottom"
-        content={<Callout intent="warning">{errorMessage}</Callout>}>
-
-      <EditableText
-          ref={selfRef}
-          value={Reflect.get(updatedObject, field)}
-          onChange={(value: string) => {
-              setErrorMessage("");
-              const nv = clone(updatedObject);
-              Reflect.set(nv, field, value);
-              setUpdatedObject(nv);
-          }}
-          onCancel={_ => {
-            setUpdatedObject(original);
-            setErrorMessage("");
-          }}
-          onConfirm={async (value: string) => {
-            if (value === Reflect.get(original, field)) {
-              setUpdatedObject(original);
-              return;
-            }
-            (await onSubmit(updatedObject)).match({
-              ok: _ => {},
-              err: msg => {
-                setErrorMessage(msg);
-                selfRef.current?.toggleEditing();
-              }
-            })
-          }}
-      />
-    </Popover>
-  );
-}
-
-export function clone<T>(value: T) {
-  return Object.assign(Object.create(Object.getPrototypeOf(value)), value) as T;
 }

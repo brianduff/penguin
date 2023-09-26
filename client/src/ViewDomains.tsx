@@ -6,7 +6,7 @@ import { Button, Section, SectionCard } from "@blueprintjs/core";
 import { Table } from "./components/Table";
 import { useState } from "react";
 import { DNSInputField } from "./Domains";
-import { clone } from "./ViewClient";
+import { clone } from "./components/FieldEditor";
 import { updateDomainList } from "./api";
 import { css } from "@emotion/react";
 
