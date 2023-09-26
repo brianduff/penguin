@@ -107,7 +107,7 @@ export function Clients() {
         </SectionCard>
         <SectionCard>
           <InputWithButton
-              prompt="IP address of new client"
+              prompt="IP address of computer"
               value={newIp}
               submit={addClient}
               onValueUpdated={updateNewIp}
