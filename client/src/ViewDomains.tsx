@@ -27,17 +27,24 @@ export function ViewDomains() {
     return await (await updateDomainList(newDomain)).andThen(revalidate);
   };
 
+  const deleteDomain = async (index: number) => {
+    const newDomain = clone(domains.unwrap());
+    newDomain.domains.splice(index, 1);
+    return await (await updateDomainList(newDomain)).andThen(revalidate);
+  };
+
   return (
     <Section title="Entries" icon={<GlobeNetwork />}>
       <SectionCard>
+        {domains.unwrap().domains &&
         <Table columnNames={["DNS name", ""]}>
-          {domains.unwrap().domains.map(domain => (
+          {domains.unwrap().domains.map((domain, index) => (
             <tr key={domain}>
               <td>{domain}</td>
-              <td><Button icon={<Delete />}></Button></td>
+              <td><Button onClick={() => deleteDomain(index)} icon={<Delete />}></Button></td>
             </tr>
           ))}
-        </Table>
+        </Table>}
       </SectionCard>
       <SectionCard>
         <DNSInputField
