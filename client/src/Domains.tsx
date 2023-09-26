@@ -10,6 +10,8 @@ import { DomainList } from "./bindings/DomainList";
 import { useRouteLoaderData, Link } from "react-router-dom";
 import { AppGridLoaderData } from "./main";
 
+const VALID_DOMAIN_SYMBOLS = "_-.0123456789";
+
 function validateDomainName(domainName: string): Result<string> {
   if (domainName.length <= 1) {
     return Result.Err("Domain name is too short");
@@ -29,7 +31,7 @@ function validateDomainName(domainName: string): Result<string> {
       return Result.Err(`Empty domain segment not allowed`);
     }
     for (const c of segment) {
-      if (isSymbol(c) && !"_-".includes(c)) {
+      if (isSymbol(c) && !VALID_DOMAIN_SYMBOLS.includes(c)) {
         return Result.Err(`Domain includes invalid symbol: '${c}'`);
       }
     }
@@ -127,7 +129,7 @@ export function DNSInputField({ newDomain, setNewDomain, errorMessage, setErrorM
 
   const updateNewDomain = (value: string) => {
     for (const c of value) {
-      if (isSymbol(c) && !"_-.".includes(c)) {
+      if (isSymbol(c) && !VALID_DOMAIN_SYMBOLS.includes(c)) {
         return;
       }
     }

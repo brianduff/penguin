@@ -4,7 +4,6 @@ import { DomainList } from "./bindings/DomainList";
 import { Delete, GlobeNetwork } from "@blueprintjs/icons";
 import { Button, Section, SectionCard } from "@blueprintjs/core";
 import { Table } from "./components/Table";
-import { InputWithButton } from "./components/InputWithButton";
 import { useState } from "react";
 import { DNSInputField } from "./Domains";
 
