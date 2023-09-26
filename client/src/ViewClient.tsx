@@ -85,12 +85,17 @@ function FieldEditor({ field, original, onSubmit }: FieldEditorProps) {
               setErrorMessage("");
               const nv = clone(updatedObject);
               Reflect.set(nv, field, value);
-              setUpdatedObject(nv); }}
+              setUpdatedObject(nv);
+          }}
           onCancel={_ => {
             setUpdatedObject(original);
             setErrorMessage("");
           }}
-          onConfirm={async (_: string) => {
+          onConfirm={async (value: string) => {
+            if (value === Reflect.get(original, field)) {
+              setUpdatedObject(original);
+              return;
+            }
             (await onSubmit(updatedObject)).match({
               ok: _ => {},
               err: msg => {
