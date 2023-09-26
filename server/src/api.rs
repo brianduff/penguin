@@ -27,7 +27,7 @@ mod clients {
 
   fn check<F, S: Into<String>>(test: F, message: S) -> Result<()>
       where F: FnOnce() -> bool {
-    if !test() {
+    if test() {
       return Err(MyError::BadRequest(message.into()))
     }
 
