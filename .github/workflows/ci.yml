@@ -12,10 +12,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Build and clippy backend
+      - name: Build and test backend
         working-directory: ./server
         run: |
           rustup default nightly
           rustup component add clippy
+          cargo clippy -p penguin -- --no-deps
           cargo test
-          cargo clippy -- --no-deps
