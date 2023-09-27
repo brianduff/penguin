@@ -48,11 +48,11 @@ sudo service penguin start
 sudo kill -HUP $(cat /run/squid.pid)
 
 # Build the client
-mkdir -p $DIR/web
+sudo mkdir -p $DIR/web
 pushd ../client
 npm install
 npm run build
-cp -r dist/* $DIR/web/
+sudo cp -r dist/* $DIR/web/
 popd
 
 # Install nginx configuration
