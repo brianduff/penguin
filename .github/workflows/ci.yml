@@ -12,6 +12,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: rustfmt, clippy
+
       - name: Set up cargo cache
         uses: actions/cache@v3
         continue-on-error: false
@@ -28,8 +36,6 @@ jobs:
       - name: Build and test backend
         working-directory: ./server
         run: |
-          rustup default nightly
-          rustup component add clippy
           cargo clippy -p penguin -- --no-deps
           cargo test
 
