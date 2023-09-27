@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Build and clippy backend
+        run: |
+          rustup default nightly
+          rustup component add clippy
+          cargo test
+          cargo clippy -- --no-deps
