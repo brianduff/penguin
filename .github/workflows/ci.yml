@@ -36,6 +36,7 @@ jobs:
       - name: Build and test backend
         working-directory: ./server
         run: |
+          cargo build
           cargo clippy -p penguin -- --no-deps
           cargo test
 
