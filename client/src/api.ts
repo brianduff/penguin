@@ -2,6 +2,11 @@ import { Client } from "./bindings/Client";
 import { DomainList } from "./bindings/DomainList";
 import { Result } from "./result";
 
+var BASE_URL = "http://localhost:8080/";
+if (import.meta.env.PROD) {
+  BASE_URL = "/"
+}
+
 async function get<T>(path: string) {
   return await req<T>(path, "GET", undefined);
 }
@@ -18,7 +23,7 @@ async function req<T>(path: string, method: string, body: any) : Promise<Result<
   }
 
   console.log(`${method} ${path}`)
-  let result = await fetch(`http://localhost:8080/api/v1/${path}`, options);
+  let result = await fetch(`${BASE_URL}api/v1/${path}`, options);
 
   console.log("Result: ", result);
   if (result.status != 200) {
