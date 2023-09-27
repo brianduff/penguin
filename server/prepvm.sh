@@ -1,7 +1,7 @@
 #!/bin/bash
 
 sudo apt update
-sudo apt install squid build-essential pkg-config libssl-dev net-tools
+sudo apt install squid build-essential pkg-config libssl-dev net-tools nginx
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
 mkdir dev

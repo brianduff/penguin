@@ -46,3 +46,7 @@ sudo systemctl daemon-reload
 
 sudo service penguin start
 sudo kill -HUP $(cat /run/squid.pid)
+
+# Install nginx configuration
+sudo cp penguin.nginx.conf /etc/nginx/conf.d/
+sudo kill -HUP $(cat /run/nginx.pid)
