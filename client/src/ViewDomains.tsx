@@ -38,7 +38,7 @@ export function ViewDomains() {
   };
 
   const commitList = async (dl: Object) => {
-    return Result.Err("Sorry I can't do that dave.");
+    return await (await updateDomainList(dl as DomainList)).andThen(revalidate);
   }
 
   return (
