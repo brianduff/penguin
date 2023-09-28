@@ -75,10 +75,15 @@ function Grid({ client }: Props) {
     );
   }
 
-  function BlockedDomains() {
-    const { domains } = useRouteLoaderData("root") as AppGridLoaderData;
+  interface DomainListChooserProps {
+    domains: Array<DomainList>,
+    selectedDomains: Set<DomainList>,
+    setSelectedDomains: (selected: Set<DomainList>) => void,
+    add: () => Promise<void>,
+    remove: (dlid: number) => Promise<void>
+  }
 
-    const [dlsToAdd, setDlsToAdd] = useState<Set<DomainList>>(new Set());
+  function DomainListChooser({ domains, selectedDomains, setSelectedDomains, add, remove }: DomainListChooserProps) {
 
     const filterDomainLists: ItemPredicate<DomainList> = (query, dl, _index, exactMatch) => {
       const normTitle = dl.name.toLowerCase();
@@ -111,7 +116,74 @@ function Grid({ client }: Props) {
     }
 
     const usedDomainListIds = new Set(client.rules?.flatMap(r => r.domainlists));
-    const unusedDomainLists = domains.unwrap().filter(dl => dl.id != null && !usedDomainListIds.has(dl.id));
+    const unusedDomainLists = domains.filter(dl => dl.id != null && !usedDomainListIds.has(dl.id));
+
+
+    return (
+      <Section title="Blocked domains">
+        <SectionCard>
+          {(client.rules === undefined || client.rules.length === 0) &&
+            <p>
+              No domains are currently blocked for {client.name}. Choose domains
+              to block below and click add.
+            </p>
+          }
+          {
+            (client.rules) &&
+            <Table columnNames={["Domain List", "Domains", ""]}>
+              {client.rules.filter(r => r.kind === "deny_http_access").flatMap(r => r.domainlists).map(dlid =>
+              {
+                let domainList = domains.filter(dl => dl.id === dlid)[0];
+                return (
+                  <tr key={domainList.id}>
+                    <td>{domainList.name}</td>
+                    <td><DomainsSummary domains={domainList.domains} /></td>
+                    <td><Button onClick={() => remove(domainList.id!)}><Remove /></Button></td>
+                  </tr>
+                );
+              })
+              }
+            </Table>
+          }
+
+        </SectionCard>
+        <SectionCard>
+          <div css={css`display: grid; grid-template-columns: 1fr auto; grid-gap: 10px;`}>
+          <MultiSelect<DomainList>
+              popoverProps={{ minimal: true }}
+              selectedItems={Array.from(selectedDomains)}
+              items={unusedDomainLists}
+              itemPredicate={filterDomainLists}
+              itemRenderer={domainListRenderer}
+              onItemSelect={(dl) => {
+                const copy = new Set<DomainList>(selectedDomains);
+                copy.add(dl);
+                setSelectedDomains(copy);
+              }}
+              onRemove={(dl) => {
+                const copy = new Set<DomainList>(selectedDomains);
+                copy.delete(dl);
+                setSelectedDomains(copy);
+              }}
+              onClear={() => setSelectedDomains(new Set())}
+              tagRenderer={(dl) => <span>{dl.name}</span>}
+          ></MultiSelect>
+
+          <Button
+              disabled={selectedDomains.size === 0}
+              onClick={add}
+          >Add</Button>
+
+          </div>
+        </SectionCard>
+      </Section>
+    );
+  }
+
+  const { domains } = useRouteLoaderData("root") as AppGridLoaderData;
+
+  function BlockedDomains() {
+    const [selected, setSelected] = useState<Set<DomainList>>(new Set());
 
     const addDls = async () => {
       if (client.rules === undefined) {
@@ -119,7 +191,7 @@ function Grid({ client }: Props) {
       }
       client.rules.push({
         kind: "deny_http_access",
-        domainlists: Array.from(dlsToAdd).map((dl) => dl.id!)
+        domainlists: Array.from(selected).map((dl) => dl.id!)
       });
 
       (await updateClient(client)).andThen(revalidate);
@@ -141,65 +213,13 @@ function Grid({ client }: Props) {
       }
     }
 
-    return (
-      <Section title="Blocked domains">
-        <SectionCard>
-          {(client.rules === undefined || client.rules.length === 0) &&
-            <p>
-              No domains are currently blocked for {client.name}. Choose domains
-              to block below and click add.
-            </p>
-          }
-          {
-            (client.rules) &&
-            <Table columnNames={["Domain List", "Domains", ""]}>
-              {client.rules.filter(r => r.kind === "deny_http_access").flatMap(r => r.domainlists).map(dlid =>
-              {
-                let domainList = domains.unwrap().filter(dl => dl.id === dlid)[0];
-                return (
-                  <tr key={domainList.id}>
-                    <td>{domainList.name}</td>
-                    <td><DomainsSummary domains={domainList.domains} /></td>
-                    <td><Button onClick={() => removeDl(domainList.id!)}><Remove /></Button></td>
-                  </tr>
-                );
-              })
-              }
-            </Table>
-          }
 
-        </SectionCard>
-        <SectionCard>
-          <div css={css`display: grid; grid-template-columns: 1fr auto; grid-gap: 10px;`}>
-          <MultiSelect<DomainList>
-              popoverProps={{ minimal: true }}
-              selectedItems={Array.from(dlsToAdd)}
-              items={unusedDomainLists}
-              itemPredicate={filterDomainLists}
-              itemRenderer={domainListRenderer}
-              onItemSelect={(dl) => {
-                const copy = new Set<DomainList>(dlsToAdd);
-                copy.add(dl);
-                setDlsToAdd(copy);
-              }}
-              onRemove={(dl) => {
-                const copy = new Set<DomainList>(dlsToAdd);
-                copy.delete(dl);
-                setDlsToAdd(copy);
-              }}
-              onClear={() => setDlsToAdd(new Set())}
-              tagRenderer={(dl) => <span>{dl.name}</span>}
-          ></MultiSelect>
-
-          <Button
-              disabled={dlsToAdd.size === 0}
-              onClick={addDls}
-          >Add</Button>
-
-          </div>
-        </SectionCard>
-      </Section>
-    );
+    return <DomainListChooser
+        domains={domains.unwrap()}
+        selectedDomains={selected}
+        setSelectedDomains={setSelected}
+        add={addDls}
+        remove={removeDl} />
   }
 
   const gridStyle = css`
