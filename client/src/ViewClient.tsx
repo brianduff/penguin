@@ -76,15 +76,22 @@ function Grid({ client }: Props) {
   }
 
   function BlockedDomains() {
-    const { clients, domains } = useRouteLoaderData("root") as AppGridLoaderData;
+    const { domains } = useRouteLoaderData("root") as AppGridLoaderData;
 
     const [dlsToAdd, setDlsToAdd] = useState<Set<DomainList>>(new Set());
 
     const filterDomainLists: ItemPredicate<DomainList> = (query, dl, _index, exactMatch) => {
-      return true;
+      const normTitle = dl.name.toLowerCase();
+      const normQuery = query.toLowerCase();
+
+      if (exactMatch) {
+        return normTitle === normQuery;
+      }
+
+      return normTitle.indexOf(normQuery) >= 0;
     };
 
-    const domainListRenderer: ItemRenderer<DomainList> = (dl, { handleClick, handleFocus, modifiers, query }) => {
+    const domainListRenderer: ItemRenderer<DomainList> = (dl, { handleClick, handleFocus, modifiers }) => {
       if (!modifiers.matchesPredicate) {
         return null;
       }
