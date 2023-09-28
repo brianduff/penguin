@@ -161,7 +161,7 @@ const MAX_SUMMARY_DOMAINS = 3;
 interface DomainsSummaryProps {
   domains: Array<string> | undefined
 }
-function DomainsSummary({ domains }: DomainsSummaryProps) {
+export function DomainsSummary({ domains }: DomainsSummaryProps) {
   if (domains) {
     let result = domains.slice(0, MAX_SUMMARY_DOMAINS).join(", ");
 
@@ -172,5 +172,5 @@ function DomainsSummary({ domains }: DomainsSummaryProps) {
     return <span>{result}</span>
   }
 
-  return <span></span>
+  return <span>No domains</span>
 }

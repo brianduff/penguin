@@ -136,14 +136,14 @@ function BlockedDomainCount({ client, domains }: BlockedDomainCountProps) {
   client.leases
       ?.filter(l => l.rule.kind === "allow_http_access")
       .flatMap(l => l.rule.domainlists)
-      .forEach(id => domainlists.delete(id));
+      ?.forEach(id => domainlists.delete(id));
 
   return domains.match({
     ok: lists => {
       let domains = new Set<string>();
       for (const dl of lists) {
         if (dl.id !== null && domainlists.has(dl.id)) {
-          dl.domains.forEach(d => domains.add(d));
+          dl.domains?.forEach(d => domains.add(d));
         }
       }
       return (<span>{domains.size}</span>);
