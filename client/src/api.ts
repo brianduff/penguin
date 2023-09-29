@@ -22,7 +22,7 @@ async function req<T>(path: string, method: string, body: any) : Promise<Result<
     options.body = JSON.stringify(body);
   }
 
-  console.log(`${method} ${path}`)
+  console.log(`${method} ${path}`, body)
   let result = await fetch(`${BASE_URL}api/v1/${path}`, options);
 
   console.log("Result: ", result);

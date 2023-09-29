@@ -15,26 +15,20 @@ export class Result<T> {
     return new Result<T>(undefined, error);
   }
 
-  async andThen<U>(op: (value: T) => Promise<Result<U>>) {
+  async andThen(op: (value: T) => Promise<Result<T>>) {
     return this.match({
       ok: (value) => op(value),
-      err: (err) => Promise.resolve(Result.Err(err))
+      err: (err) => Promise.resolve(Result.Err<T>(err))
     })
   }
 
   async orElse(op: (error: string) => Promise<Result<T> | void>) {
     return this.match({
-      ok: (value) => Promise.resolve(Result.Ok(value)),
+      ok: (value) => Promise.resolve(Result.Ok<T>(value)),
       err: (msg) => op(msg)
     })
   }
 
-  // andThen<U>(op: (value: T) => Result<U>) {
-  //   return this.match({
-  //     ok: (value) => op(value),
-  //     err: (err) => Result.Err(err)
-  //   })
-  // }
 
   isOk() {
     return this.result !== undefined;

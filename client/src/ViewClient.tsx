@@ -2,9 +2,9 @@ import { useLoaderData, useNavigate, useRevalidator, useRouteLoaderData } from "
 import { ErrorMessage } from "./components/ErrorMessage";
 import { Result } from "./result";
 import { Client } from "./bindings/Client";
-import { Button, EditableText, MenuItem, Section, SectionCard } from "@blueprintjs/core";
+import { Button, ButtonGroup, Dialog, DialogBody, DialogFooter, EditableText, MenuItem, Section, SectionCard } from "@blueprintjs/core";
 import { css } from "@emotion/react";
-import { Delete, Edit, Remove } from "@blueprintjs/icons";
+import { Delete, Edit, Pause, Remove } from "@blueprintjs/icons";
 import { MultiSelect, ItemPredicate, ItemRenderer } from "@blueprintjs/select";
 import { useRef, useState } from "react";
 import { deleteClient, updateClient } from "./api";
@@ -13,6 +13,7 @@ import { DomainList } from "./bindings/DomainList";
 import { AppGridLoaderData } from "./main";
 import { DomainsSummary } from "./Domains";
 import { Table } from "./components/Table";
+import { SimpleSelect } from "./components/SimpleSelect";
 
 export function ViewClient() {
   const client = useLoaderData() as Result<Client>;
@@ -47,7 +48,7 @@ function Grid({ client }: Props) {
       return (await updateClient(newClient as Client)).andThen(revalidate);
     };
 
-    const navigateToClients = async (value: unknown) => {
+    const navigateToClients = async (value: Client) => {
       navigate("/");
       return Result.Ok(value);
     }
@@ -76,14 +77,16 @@ function Grid({ client }: Props) {
   }
 
   interface DomainListChooserProps {
+    title: string,
     domains: Array<DomainList>,
     selectedDomains: Set<DomainList>,
     setSelectedDomains: (selected: Set<DomainList>) => void,
     add: () => Promise<void>,
-    remove: (dlid: number) => Promise<void>
+    remove: (dlid: number) => Promise<void>,
+    pause: (dlid: number) => Promise<void>
   }
 
-  function DomainListChooser({ domains, selectedDomains, setSelectedDomains, add, remove }: DomainListChooserProps) {
+  function DomainListChooser({ title, domains, selectedDomains, setSelectedDomains, add, remove, pause }: DomainListChooserProps) {
 
     const filterDomainLists: ItemPredicate<DomainList> = (query, dl, _index, exactMatch) => {
       const normTitle = dl.name.toLowerCase();
@@ -120,7 +123,7 @@ function Grid({ client }: Props) {
 
 
     return (
-      <Section title="Blocked domains">
+      <Section title={title}>
         <SectionCard>
           {(client.rules === undefined || client.rules.length === 0) &&
             <p>
@@ -138,7 +141,12 @@ function Grid({ client }: Props) {
                   <tr key={domainList.id}>
                     <td>{domainList.name}</td>
                     <td><DomainsSummary domains={domainList.domains} /></td>
-                    <td><Button onClick={() => remove(domainList.id!)}><Remove /></Button></td>
+                    <td>
+                      <ButtonGroup minimal={true}>
+                        <Button onClick={() => pause(domainList.id!)}><Pause /></Button>
+                        <Button onClick={() => remove(domainList.id!)}><Remove /></Button>
+                      </ButtonGroup>
+                    </td>
                   </tr>
                 );
               })
@@ -184,6 +192,8 @@ function Grid({ client }: Props) {
 
   function BlockedDomains() {
     const [selected, setSelected] = useState<Set<DomainList>>(new Set());
+    const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
+    const [pausingDl, setPausingDl] = useState<number | null>(null);
 
     const addDls = async () => {
       if (client.rules === undefined) {
@@ -213,13 +223,49 @@ function Grid({ client }: Props) {
       }
     }
 
+    const pause = async (dlid: number) => {
+      setPausingDl(dlid);
+      setPauseDialogOpen(true);
+    }
 
-    return <DomainListChooser
-        domains={domains.unwrap()}
-        selectedDomains={selected}
-        setSelectedDomains={setSelected}
-        add={addDls}
-        remove={removeDl} />
+    const closeDialog = (value: Client): Promise<Result<Client>> => {
+      setPauseDialogOpen(false);
+      return Promise.resolve(Result.Ok(value));
+    }
+
+
+    const savePause = async (time: PauseTime) => {
+      const now = new Date().getTime();
+      const end = now + (time.delta_mins! * 60 * 1000);  // TODO handle custom times
+
+      if (client.leases === undefined) {
+        client.leases = [];
+      }
+      client.leases.push({
+        end_date: new Date(end).toISOString(),
+        rule: {
+          kind: "allow_http_access",
+          domainlists: [ pausingDl! ]
+        }
+      });
+
+      (await (await updateClient(client)).andThen(revalidate)).andThen(closeDialog);
+    }
+
+    return (<>
+      <DomainListChooser
+          title="Blocked domains"
+          domains={domains.unwrap()}
+          selectedDomains={selected}
+          setSelectedDomains={setSelected}
+          add={addDls}
+          remove={removeDl}
+          pause={pause} />
+      <PauseDialog
+          isOpen={pauseDialogOpen}
+          setSelectedDate={savePause}
+          close={() => setPauseDialogOpen(false)} />
+    </>)
   }
 
   const gridStyle = css`
@@ -230,8 +276,69 @@ function Grid({ client }: Props) {
 
   return (
     <div css={gridStyle}>
-      <ClientDetails />
       <BlockedDomains />
+      <ClientDetails />
     </div>
+  )
+}
+
+interface PauseDialogProps {
+  isOpen: boolean,
+  close: () => void,
+  setSelectedDate: (date: PauseTime) => void,
+}
+
+interface PauseTime {
+  name: string,
+  delta_mins?: number,
+}
+
+const PAUSE_TIMES : PauseTime[] = [
+  {
+    name: "30 minutes",
+    delta_mins: 30
+  },
+  {
+    name: "One hour",
+    delta_mins: 60
+  },
+  {
+    name: "Two hours",
+    delta_mins: 120
+  },
+  {
+    name: "Six hours",
+    delta_mins: 6 * 60
+  },
+  {
+    name: "One day",
+    delta_mins: 24 * 60
+  },
+  // {
+  //   name: "Custom"
+  // }
+]
+
+function PauseDialog({ isOpen, setSelectedDate, close }: PauseDialogProps) {
+  const [currentDate, setCurrentDate] = useState<null | PauseTime>(null);
+
+  return (
+    <Dialog title="Pause block" isOpen={isOpen} onClose={close}>
+      <DialogBody>
+        <p>
+          The domains in this list will be immediately unblocked until the
+          specified time. Choose a time to resume the block.
+        </p>
+        <p>
+          <SimpleSelect<PauseTime>
+              items={PAUSE_TIMES}
+              render={t => t.name}
+              setSelected={t => { setCurrentDate(t) }} />
+        </p>
+      </DialogBody>
+      <DialogFooter minimal={true} actions={
+        <Button disabled={currentDate === null} intent="primary" text="Block" onClick={() => setSelectedDate(currentDate!)} />
+      }/>
+    </Dialog>
   )
 }
