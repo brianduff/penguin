@@ -242,7 +242,7 @@ function Grid({ client }: Props) {
         client.leases = [];
       }
       client.leases.push({
-        end_date: new Date(end).toISOString(),
+        end_date: new Date(end).toISOString().substring(0, 19),
         rule: {
           kind: "allow_http_access",
           domainlists: [ pausingDl! ]
