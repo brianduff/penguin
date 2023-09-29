@@ -326,8 +326,7 @@ function PauseDialog({ isOpen, setSelectedDate, close }: PauseDialogProps) {
     <Dialog title="Pause block" isOpen={isOpen} onClose={close}>
       <DialogBody>
         <p>
-          The domains in this list will be immediately unblocked until the
-          specified time. Choose a time to resume the block.
+          The domains in this list will be unblocked for the specified time.
         </p>
         <p>
           <SimpleSelect<PauseTime>
@@ -337,7 +336,7 @@ function PauseDialog({ isOpen, setSelectedDate, close }: PauseDialogProps) {
         </p>
       </DialogBody>
       <DialogFooter minimal={true} actions={
-        <Button disabled={currentDate === null} intent="primary" text="Block" onClick={() => setSelectedDate(currentDate!)} />
+        <Button disabled={currentDate === null} intent="primary" text="Unblock" onClick={() => setSelectedDate(currentDate!)} />
       }/>
     </Dialog>
   )
