@@ -17,7 +17,7 @@ use tower_http::{
   cors::{Any, CorsLayer},
   trace::{self, TraceLayer},
 };
-use tracing::{error, info, warn, Level};
+use tracing::{error, warn, Level};
 
 use crate::{
   file::{get_parent_or_die, read_json_value, write_json_value},
