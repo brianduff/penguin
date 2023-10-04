@@ -1,4 +1,5 @@
 import { HTMLTable } from "@blueprintjs/core";
+import { css } from "@emotion/react";
 import { ReactElement } from "react";
 
 export interface TableProps {
@@ -14,7 +15,7 @@ export function Table({ columnNames, children }: TableProps) {
   return (
     <HTMLTable compact={true} striped={true}>
       <thead>
-        <tr>
+        <tr css={css`white-space: nowrap;`}>
           {columnNames.map((c, i) => <th key={i}>{c}</th>)}
         </tr>
       </thead>
