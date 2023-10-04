@@ -246,34 +246,31 @@ async fn poll_statusz() {
 }
 
 async fn repair_client_json(state: &AppState) -> anyhow::Result<()> {
-  info!(
-    "Loading clients from {:?}",
-    &state.app_config.clients_json()
-  );
+  if state.app_config.clients_json().exists() {
+    let mut repaired = false;
 
-  let mut repaired = false;
-
-  // Patch the json to fix compatibility issues. TODO: generalize this.
-  let mut client_value: Value = read_json_value(&state.app_config.clients_json())?;
-  if let Some(clients) = client_value.as_array_mut() {
-    for client in clients.iter_mut() {
-      if let Some(client) = client.as_object_mut() {
-        if let Some(leases) = client.get_mut("leases") {
-          if let Some(leases) = leases.as_array_mut() {
-            for lease in leases.iter_mut() {
-              if let Some(lease) = lease.as_object_mut() {
-                if let Some(v) = lease.get("end_date") {
-                  if lease.get("end_date_utc").is_none() {
-                    warn!(
-                      "Repairing non-UTC date in {:?}",
-                      &state.app_config.clients_json()
-                    );
-                    repaired = true;
-                    let date: NaiveDateTime = serde_json::from_value(v.clone())?;
-                    lease.insert(
-                      "end_date_utc".to_string(),
-                      Value::Number(date.timestamp_millis().into()),
-                    );
+    // Patch the json to fix compatibility issues. TODO: generalize this.
+    let mut client_value: Value = read_json_value(&state.app_config.clients_json())?;
+    if let Some(clients) = client_value.as_array_mut() {
+      for client in clients.iter_mut() {
+        if let Some(client) = client.as_object_mut() {
+          if let Some(leases) = client.get_mut("leases") {
+            if let Some(leases) = leases.as_array_mut() {
+              for lease in leases.iter_mut() {
+                if let Some(lease) = lease.as_object_mut() {
+                  if let Some(v) = lease.get("end_date") {
+                    if lease.get("end_date_utc").is_none() {
+                      warn!(
+                        "Repairing non-UTC date in {:?}",
+                        &state.app_config.clients_json()
+                      );
+                      repaired = true;
+                      let date: NaiveDateTime = serde_json::from_value(v.clone())?;
+                      lease.insert(
+                        "end_date_utc".to_string(),
+                        Value::Number(date.timestamp_millis().into()),
+                      );
+                    }
                   }
                 }
               }
@@ -282,11 +279,11 @@ async fn repair_client_json(state: &AppState) -> anyhow::Result<()> {
         }
       }
     }
-  }
 
-  if repaired {
-    warn!("Writing repaired {:?}", &state.app_config.clients_json());
-    write_json_value(&state.app_config.clients_json(), &client_value)?;
+    if repaired {
+      warn!("Writing repaired {:?}", &state.app_config.clients_json());
+      write_json_value(&state.app_config.clients_json(), &client_value)?;
+    }
   }
 
   Ok(())

@@ -64,9 +64,16 @@ pub fn generate_squid_config<P: AsRef<Path>>(
     }
   }
 
-  if !domainlists.items.is_empty() {
-    let mut b = create_writer(out_dir, "domains.conf")?;
+  // If there are no clients, we must nevertheless write out a dummy client_*.conf file, otherwise
+  // squid will barf.
+  let dummy = out_dir.join("client_dummy.conf");
+  if !dummy.exists() {
+    let mut writer = create_writer(out_dir, "client_dummy.conf")?;
+    writer.writeln("# This file is intentionally left blank.")?;
+  }
 
+  let mut b = create_writer(out_dir, "domains.conf")?;
+  if !domainlists.items.is_empty() {
     for domainlist in domainlists.items.iter() {
       let domainlist_name = id_string("domains", domainlist);
       b.writeln(format!(
@@ -75,6 +82,10 @@ pub fn generate_squid_config<P: AsRef<Path>>(
         domainlist.domains.join(" ")
       ))?;
     }
+  } else {
+    // We must always write out a domains.conf, otherwise squid will barf. If there are no domains,
+    // just write one with a comment.
+    b.writeln("# This file will be populated with penguin domains")?;
   }
 
   Ok(())
