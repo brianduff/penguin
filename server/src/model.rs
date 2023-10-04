@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 #[derive(Serialize, Deserialize, Clone, TS)]
-#[ts(export)]
+//#[ts(export)]
 pub struct Client {
   pub id: Option<u32>,
   pub ip: String,
@@ -19,7 +19,7 @@ pub struct Client {
 }
 
 #[derive(Serialize, Deserialize, Clone, TS)]
-#[ts(export)]
+//#[ts(export)]
 pub struct Rule {
   pub kind: String,
   #[serde(skip_serializing_if = "Vec::is_empty", default)]
@@ -27,7 +27,7 @@ pub struct Rule {
 }
 
 #[derive(Serialize, Deserialize, Clone, TS)]
-#[ts(export)]
+//#[ts(export)]
 pub struct Lease {
   #[serde(with = "ts_milliseconds_option")]
   pub end_date_utc: Option<DateTime<Utc>>,
@@ -37,7 +37,7 @@ pub struct Lease {
 }
 
 #[derive(Serialize, Deserialize, Clone, TS)]
-#[ts(export)]
+//#[ts(export)]
 pub struct DomainList {
   pub id: Option<u32>,
   pub name: String,
