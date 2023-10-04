@@ -4,11 +4,11 @@ import { Result } from "./result";
 import { Client } from "./bindings/Client";
 import { Button, ButtonGroup, Dialog, DialogBody, DialogFooter, EditableText, MenuItem, Section, SectionCard } from "@blueprintjs/core";
 import { css } from "@emotion/react";
-import { Delete, Edit, Pause, Remove } from "@blueprintjs/icons";
+import { Delete, Edit, Pause, Play, Remove } from "@blueprintjs/icons";
 import { MultiSelect, ItemPredicate, ItemRenderer } from "@blueprintjs/select";
 import { useRef, useState } from "react";
 import { deleteClient, updateClient } from "./api";
-import { FieldEditor } from "./components/FieldEditor";
+import { FieldEditor, clone } from "./components/FieldEditor";
 import { DomainList } from "./bindings/DomainList";
 import { AppGridLoaderData } from "./main";
 import { DomainsSummary } from "./Domains";
@@ -141,6 +141,13 @@ function Grid({ client }: Props) {
       (await (await updateClient(client)).andThen(revalidate)).andThen(closeDialog);
     }
 
+    const resume = async (dl: DomainList) => {
+      // Remove all leases for the given dl.
+      let newLeases = client.leases?.filter(l => !l.rule.domainlists.includes(dl.id!));
+      client.leases = newLeases;
+      (await updateClient(client)).andThen(revalidate);
+    }
+
     function DomainListChooser() {
 
       const filterDomainLists: ItemPredicate<DomainList> = (query, dl, _index, exactMatch) => {
@@ -198,7 +205,10 @@ function Grid({ client }: Props) {
                       <td><UnblockStatus dl={domainList} /></td>
                       <td>
                         <ButtonGroup minimal={true}>
-                          <Button onClick={() => pause(domainList.id!)}><Pause /></Button>
+                          {(getActiveLeases(domainList).length === 0) &&
+                          <Button onClick={() => pause(domainList.id!)}><Pause /></Button>}
+                          {(getActiveLeases(domainList).length !== 0) &&
+                          <Button onClick={() => resume(domainList)}><Play /></Button>}
                           <Button onClick={() => remove(domainList.id!)}><Remove /></Button>
                         </ButtonGroup>
                       </td>
@@ -248,9 +258,7 @@ function Grid({ client }: Props) {
     }
 
     function UnblockStatus({ dl }: UnblockStatusProps) {
-      const leaseDates = client.leases
-          ?.filter(l => l.rule.kind === "allow_http_access")
-          .filter(l => l.rule.domainlists.includes(dl.id!))
+      const leaseDates = getActiveLeases(dl)
           .flatMap(l => l.end_date)
           .map(d => new Date(d + "Z"))
           .sort();
@@ -270,6 +278,12 @@ function Grid({ client }: Props) {
           setSelectedDate={savePause}
           close={() => setPauseDialogOpen(false)} />
     </>)
+  }
+
+  function getActiveLeases(dl: DomainList) {
+    return client.leases
+      ?.filter(l => l.rule.kind === "allow_http_access")
+      .filter(l => l.rule.domainlists.includes(dl.id!))
   }
 
   const gridStyle = css`
