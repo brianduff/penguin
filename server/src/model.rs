@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc, NaiveDateTime};
+use chrono::serde::ts_milliseconds_option;
 use confique::Config;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -28,7 +29,10 @@ pub struct Rule {
 #[derive(Serialize, Deserialize, Clone, TS)]
 #[ts(export)]
 pub struct Lease {
-  pub end_date: NaiveDateTime,
+  #[serde(with = "ts_milliseconds_option")]
+  pub end_date_utc: Option<DateTime<Utc>>,
+  #[deprecated(note="Use end_date_utc")]
+  pub end_date: Option<NaiveDateTime>,
   pub rule: Rule
 }
 

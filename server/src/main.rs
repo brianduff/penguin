@@ -1,24 +1,36 @@
-use std::{sync::{Arc, Mutex}, path::Path, time::Duration};
+use std::{
+    path::Path,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use api::api_routes;
-use axum::{Router, routing::get, extract::State};
-use chrono::Utc;
-use model::{DomainList, Conf};
+use axum::{extract::State, routing::get, Router};
+use chrono::{NaiveDateTime, Utc};
+use model::{Conf, DomainList};
 use restlist::JsonRestList;
+use serde_json::Value;
 use tempdir::TempDir;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio_schedule::{every, Job};
-use tower_http::{trace::{TraceLayer, self}, cors::{CorsLayer, Any}};
-use tracing::Level;
+use tower_http::{
+    cors::{Any, CorsLayer},
+    trace::{self, TraceLayer},
+};
+use tracing::{info, Level, error, warn};
 
-use crate::{model::Client, generate::generate_squid_config, file::get_parent_or_die};
+use crate::{
+    file::{get_parent_or_die, read_json_value, write_json_value},
+    generate::generate_squid_config,
+    model::Client,
+};
 
 mod api;
-mod file;
-mod list;
 mod errors;
-mod model;
+mod file;
 mod generate;
+mod list;
+mod model;
 mod restlist;
 mod squid;
 
@@ -26,7 +38,7 @@ const PORT: u32 = 8080;
 
 #[derive(Clone, Copy)]
 pub enum Event {
-    GenerateConfiguration
+    GenerateConfiguration,
 }
 
 async fn status() -> errors::Result<String> {
@@ -75,11 +87,11 @@ async fn possibly_regenerate_config(state: AppState) -> anyhow::Result<String> {
     // TODO: check lastmod time of the files and skip loading if not changed.
     let mut clients = JsonRestList::<Client>::load(state.app_config.clients_json())?;
 
-    let now = Utc::now().naive_local();
+    let now = Utc::now();
     let mut lease_found: bool = false;
     for client in clients.list.items.iter_mut() {
         let old_len = client.leases.len();
-        client.leases.retain(|l| now <= l.end_date);
+        client.leases.retain(|l| now <= l.end_date_utc.unwrap());
         let new_len = client.leases.len();
         if new_len != old_len {
             lease_found = true;
@@ -115,10 +127,10 @@ pub struct AppState {
     // A mutex on the generated squid configuration
     gen_config_lock: Arc<Mutex<u32>>,
     // A mutex on the local configuration json files
-//    config_lock: Arc<Mutex<u32>>,
+    //    config_lock: Arc<Mutex<u32>>,
 
     // App config
-    app_config: Conf
+    app_config: Conf,
 }
 
 impl AppState {
@@ -143,14 +155,16 @@ async fn main() {
     let state = AppState {
         events: tx,
         gen_config_lock: Arc::new(Mutex::new(0)),
- //       config_lock: Arc::new(Mutex::new(0)),
-        app_config: Conf::load().unwrap()
+        //       config_lock: Arc::new(Mutex::new(0)),
+        app_config: Conf::load().unwrap(),
     };
 
+    if let Err(e) = repair_client_json(&state).await {
+        error!("Failed to repair client json: {:?}", e);
+    }
+
     let state_for_listen = state.clone();
-    tokio::spawn(async move {
-        listen_for_events(state_for_listen, rx).await
-    });
+    tokio::spawn(async move { listen_for_events(state_for_listen, rx).await });
 
     // On startup, regenerate squid configuration in case it changed while the
     // server was down.
@@ -165,11 +179,14 @@ async fn main() {
     // expired leases from our own configuration.
     let state_for_cron = state.clone();
     tokio::spawn(async move {
-        every(2).seconds().perform(|| async {
-            if let Err(err) = possibly_regenerate_config(state_for_cron.clone()).await {
-                tracing::error!("Failed to generate config: {:?}", err);
-            }
-        }).await;
+        every(2)
+            .seconds()
+            .perform(|| async {
+                if let Err(err) = possibly_regenerate_config(state_for_cron.clone()).await {
+                    tracing::error!("Failed to generate config: {:?}", err);
+                }
+            })
+            .await;
     });
 
     // A permissive cors policy because we're expecting to be behind a firewall.
@@ -184,9 +201,11 @@ async fn main() {
         .nest("/api", api_routes())
         .with_state(state)
         .layer(cors)
-        .layer(TraceLayer::new_for_http()
-            .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
-            .on_response(trace::DefaultOnResponse::new().level(Level::INFO)));
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
+                .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
+        );
 
     // Spawn a statusz poller. This pings statusz a few times to make sure it's up
     // and sends notify a ready state when it is.
@@ -198,7 +217,6 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
-
 }
 
 static TRIES: u8 = 50;
@@ -217,7 +235,10 @@ async fn poll_statusz() {
                     tracing::info!("Server listening on port {}", PORT);
                     #[cfg(target_os = "linux")]
                     {
-                        libsystemd::daemon::notify(false, &[libsystemd::daemon::NotifyState::Ready]);
+                        libsystemd::daemon::notify(
+                            false,
+                            &[libsystemd::daemon::NotifyState::Ready],
+                        );
                     }
                     return;
                 }
@@ -225,4 +246,49 @@ async fn poll_statusz() {
         }
         tracing::debug!("Still waiting for server to start.. (attempt {})", tries);
     }
+}
+
+async fn repair_client_json(state: &AppState) -> anyhow::Result<()> {
+    info!(
+        "Loading clients from {:?}",
+        &state.app_config.clients_json()
+    );
+
+    let mut repaired = false;
+
+    // Patch the json to fix compatibility issues. TODO: generalize this.
+    let mut client_value: Value = read_json_value(&state.app_config.clients_json())?;
+    if let Some(clients) = client_value.as_array_mut() {
+        for client in clients.iter_mut() {
+            if let Some(client) = client.as_object_mut() {
+                if let Some(leases) = client.get_mut("leases") {
+                    if let Some(leases) = leases.as_array_mut() {
+                        for lease in leases.iter_mut() {
+                            if let Some(lease) = lease.as_object_mut() {
+                                if let Some(v) = lease.get("end_date") {
+                                    if lease.get("end_date_utc").is_none() {
+                                        warn!("Repairing non-UTC date in {:?}", &state.app_config.clients_json());
+                                        repaired = true;
+                                        let date: NaiveDateTime =
+                                            serde_json::from_value(v.clone())?;
+                                        lease.insert(
+                                            "end_date_utc".to_string(),
+                                            Value::Number(date.timestamp_millis().into()),
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if repaired {
+        warn!("Writing repaired {:?}", &state.app_config.clients_json());
+        write_json_value(&state.app_config.clients_json(), &client_value)?;
+    }
+
+    Ok(())
 }

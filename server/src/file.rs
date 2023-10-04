@@ -1,5 +1,22 @@
-use std::{path::Path, fs::File, io::{LineWriter, Write}};
+use std::{path::Path, fs::File, io::{LineWriter, Write, BufReader, BufWriter}};
 use anyhow::{anyhow, Result};
+use serde_json::Value;
+
+pub fn read_json_value(path: &Path) -> anyhow::Result<Value> {
+  let file = File::open(path)?;
+  let reader = BufReader::new(&file);
+
+  Ok(serde_json::from_reader(reader)?)
+}
+
+pub fn write_json_value(path: &Path, value: &Value) -> anyhow::Result<()> {
+  let file = File::options().write(true).open(path)?;
+  let writer = BufWriter::new(&file);
+
+  serde_json::to_writer_pretty(writer, value)?;
+
+  Ok(())
+}
 
 pub fn get_parent_or_die(path: &Path) -> anyhow::Result<&Path> {
   path.parent().ok_or_else(|| anyhow!("Failed to get parent of {:?}", path))

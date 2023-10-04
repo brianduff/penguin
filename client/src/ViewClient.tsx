@@ -8,12 +8,13 @@ import { Delete, Edit, Pause, Play, Remove } from "@blueprintjs/icons";
 import { MultiSelect, ItemPredicate, ItemRenderer } from "@blueprintjs/select";
 import { useRef, useState } from "react";
 import { deleteClient, updateClient } from "./api";
-import { FieldEditor, clone } from "./components/FieldEditor";
+import { FieldEditor } from "./components/FieldEditor";
 import { DomainList } from "./bindings/DomainList";
 import { AppGridLoaderData } from "./main";
 import { DomainsSummary } from "./Domains";
 import { Table } from "./components/Table";
 import { SimpleSelect } from "./components/SimpleSelect";
+import { Lease } from "./bindings/Lease";
 
 export function ViewClient() {
   const client = useLoaderData() as Result<Client>;
@@ -131,7 +132,8 @@ function Grid({ client }: Props) {
         client.leases = [];
       }
       client.leases.push({
-        end_date: new Date(end).toISOString().substring(0, 19),
+        end_date: null,
+        end_date_utc: new Date(end).getTime(),
         rule: {
           kind: "allow_http_access",
           domainlists: [ pausingDl! ]
@@ -259,8 +261,8 @@ function Grid({ client }: Props) {
 
     function UnblockStatus({ dl }: UnblockStatusProps) {
       const leaseDates = getActiveLeases(dl)
-          .flatMap(l => l.end_date)
-          .map(d => new Date(d + "Z"))
+          .flatMap(l => l.end_date_utc!)
+          .map(d => new Date(d))
           .sort();
       if (leaseDates && leaseDates.length > 0) {
         const lastDate = leaseDates[leaseDates.length - 1];
@@ -281,9 +283,14 @@ function Grid({ client }: Props) {
   }
 
   function getActiveLeases(dl: DomainList) {
-    return client.leases
+    let leases = client.leases
       ?.filter(l => l.rule.kind === "allow_http_access")
-      .filter(l => l.rule.domainlists.includes(dl.id!))
+      .filter(l => l.rule.domainlists.includes(dl.id!));
+
+    if (leases === undefined) {
+      return new Array<Lease>();
+    }
+    return leases;
   }
 
   const gridStyle = css`
