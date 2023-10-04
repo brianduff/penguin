@@ -2,9 +2,9 @@ import { useLoaderData, useRevalidator } from "react-router-dom";
 import { Result } from "./result";
 import { DomainList } from "./bindings/DomainList";
 import { Delete, GlobeNetwork } from "@blueprintjs/icons";
-import { Button, Section, SectionCard } from "@blueprintjs/core";
+import { Button, Dialog, DialogBody, DialogFooter, Section, SectionCard, TextArea } from "@blueprintjs/core";
 import { Table } from "./components/Table";
-import { useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { DNSInputField } from "./Domains";
 import { FieldEditor, clone } from "./components/FieldEditor";
 import { updateDomainList } from "./api";
@@ -15,6 +15,8 @@ export function ViewDomains() {
   const [errorMessage, setErrorMessage] = useState("");
   const [newDomain, setNewDomain] = useState("");
   const revalidator = useRevalidator();
+  const [isBulkOpen, setBulkOpen] = useState(false);
+  const [bulkDomains, setBulkDomains] = useState("");
 
   const revalidate = async (value: DomainList) => {
     setNewDomain("");
@@ -39,6 +41,21 @@ export function ViewDomains() {
 
   const commitList = async (dl: Object) => {
     return await (await updateDomainList(dl as DomainList)).andThen(revalidate);
+  }
+
+  const submitBulkDomains = async () => {
+    const newDomain = clone(domains.unwrap());
+    if (newDomain.domains === undefined) {
+      newDomain.domains = [];
+    }
+
+    const closeDialog = async (dl: DomainList) : Promise<Result<DomainList>> => {
+      setBulkOpen(false);
+      return Result.Ok(dl);
+    }
+
+    newDomain.domains.push(...bulkDomains.split("\n").filter(s => s !== null && s.length !== 0).map(s => s.trim()));
+    return (await (await updateDomainList(newDomain)).andThen(revalidate)).andThen(closeDialog);
   }
 
   return (
@@ -68,6 +85,25 @@ export function ViewDomains() {
           setErrorMessage={setErrorMessage}
           submitDomain={submitDomain}
         />
+        &nbsp;
+        <Button onClick={() => setBulkOpen(true)}>Bulk Add...</Button>
+        <Dialog
+              isOpen={isBulkOpen}
+              title="Bulk add domains"
+              onClose={() => setBulkOpen(false)}>
+            <DialogBody>
+              <p>Enter domains to add one line at a time.</p>
+              <p>
+                <TextArea
+                    value={bulkDomains}
+                    onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setBulkDomains(e.target.value)}
+                    autoResize={true} />
+              </p>
+            </DialogBody>
+            <DialogFooter>
+              <Button intent="primary" text="Add" onClick={submitBulkDomains} />
+            </DialogFooter>
+        </Dialog>
       </SectionCard>
     </Section>);
 
