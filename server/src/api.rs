@@ -1,10 +1,13 @@
-use axum::Router;
-use crate::{errors::Result, AppState};
+use crate::errors::MyError;
 use crate::model::Client;
 use crate::restlist::JsonRestList;
-use axum::{routing, extract::{Path, self}, Json};
+use crate::{errors::Result, AppState};
 use axum::extract::State;
-use crate::errors::MyError;
+use axum::Router;
+use axum::{
+  extract::{self, Path},
+  routing, Json,
+};
 
 pub fn api_routes() -> Router<AppState> {
   Router::new()
@@ -23,28 +26,51 @@ mod clients {
       .route("/:id", routing::get(get))
       .route("/:id", routing::put(put))
       .route("/:id", routing::delete(delete))
-
   }
 
   fn check<F, S: Into<String>>(test: F, message: S) -> Result<()>
-      where F: FnOnce() -> bool {
+  where
+    F: FnOnce() -> bool,
+  {
     if test() {
-      return Err(MyError::BadRequest(message.into()))
+      return Err(MyError::BadRequest(message.into()));
     }
 
     Ok(())
   }
 
   fn other_clients<'a>(clients: &'a JsonRestList<Client>, client: &'a Client) -> Vec<&'a Client> {
-    clients.list.items.iter().filter(|c| c.id != client.id).collect()
+    clients
+      .list
+      .items
+      .iter()
+      .filter(|c| c.id != client.id)
+      .collect()
   }
 
   fn validate(clients: &JsonRestList<Client>, client: &Client) -> Result<()> {
-    check(|| client.name.trim().is_empty(), "Client name must not be empty")?;
-    check(|| other_clients(clients, client).iter().map(|c| &c.ip).any(|v| v == &client.ip),
-        format!("A client with ip address '{}' already exists.", client.ip))?;
-    check(|| other_clients(clients, client).iter().map(|c| &c.name).any(|v| v == &client.name),
-        format!("A client with name '{}' already exists.", client.name))?;
+    check(
+      || client.name.trim().is_empty(),
+      "Client name must not be empty",
+    )?;
+    check(
+      || {
+        other_clients(clients, client)
+          .iter()
+          .map(|c| &c.ip)
+          .any(|v| v == &client.ip)
+      },
+      format!("A client with ip address '{}' already exists.", client.ip),
+    )?;
+    check(
+      || {
+        other_clients(clients, client)
+          .iter()
+          .map(|c| &c.name)
+          .any(|v| v == &client.name)
+      },
+      format!("A client with name '{}' already exists.", client.name),
+    )?;
 
     Ok(())
   }
@@ -61,8 +87,11 @@ mod clients {
     load(&state)?.get(id)
   }
 
-  async fn put(State(state): State<AppState>, Path(id): Path<u32>,
-      extract::Json(client): extract::Json<Client>) -> Result<Json<Client>> {
+  async fn put(
+    State(state): State<AppState>,
+    Path(id): Path<u32>,
+    extract::Json(client): extract::Json<Client>,
+  ) -> Result<Json<Client>> {
     let clients = load(&state)?;
 
     validate(&clients, &client)?;
@@ -79,7 +108,10 @@ mod clients {
     result
   }
 
-  async fn post(State(state): State<AppState>, extract::Json(client): extract::Json<Client>) -> Result<Json<Client>> {
+  async fn post(
+    State(state): State<AppState>,
+    extract::Json(client): extract::Json<Client>,
+  ) -> Result<Json<Client>> {
     let mut clients = load(&state)?;
     validate(&clients, &client)?;
     let result = clients.add(client.clone());
@@ -87,7 +119,6 @@ mod clients {
 
     result
   }
-
 }
 
 mod domains {
@@ -116,7 +147,11 @@ mod domains {
     load(&state)?.get(id)
   }
 
-  async fn put(State(state): State<AppState>, Path(id): Path<u32>, extract::Json(client): extract::Json<DomainList>) -> Result<Json<DomainList>> {
+  async fn put(
+    State(state): State<AppState>,
+    Path(id): Path<u32>,
+    extract::Json(client): extract::Json<DomainList>,
+  ) -> Result<Json<DomainList>> {
     load(&state)?.put(id, client)
   }
 
@@ -124,9 +159,11 @@ mod domains {
     load(&state)?.delete(id)
   }
 
-  async fn post(State(state): State<AppState>, extract::Json(client): extract::Json<DomainList>) -> Result<Json<DomainList>> {
+  async fn post(
+    State(state): State<AppState>,
+    extract::Json(client): extract::Json<DomainList>,
+  ) -> Result<Json<DomainList>> {
     let mut clients = load(&state)?;
-
 
     clients.add(client)
   }

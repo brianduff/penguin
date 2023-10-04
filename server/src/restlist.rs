@@ -2,17 +2,17 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::path::{Path, PathBuf};
 
-use axum::Json;
-use serde::Serialize;
-use serde::de::DeserializeOwned;
+use crate::errors::MyError;
+use crate::errors::Result;
 use crate::file::create_file;
 use crate::list::{Identifiable, IdentifiedList};
-use crate::errors::Result;
-use crate::errors::MyError;
+use axum::Json;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 
 pub struct JsonRestList<T: Identifiable + Clone + Serialize + DeserializeOwned> {
   pub list: IdentifiedList<T>,
-  path: PathBuf
+  path: PathBuf,
 }
 
 impl<T: Identifiable + Clone + Serialize + DeserializeOwned> JsonRestList<T> {
@@ -28,7 +28,7 @@ impl<T: Identifiable + Clone + Serialize + DeserializeOwned> JsonRestList<T> {
     };
     Ok(Self {
       list: IdentifiedList::new(items),
-      path: path.as_ref().to_owned()
+      path: path.as_ref().to_owned(),
     })
   }
 
@@ -46,12 +46,8 @@ impl<T: Identifiable + Clone + Serialize + DeserializeOwned> JsonRestList<T> {
 
   pub fn get(&self, id: u32) -> Result<Json<T>> {
     match self.list.items.iter().find(|c| c.id() == Some(id)) {
-      Some(c) => {
-        Ok(axum::Json(c.clone()))
-      },
-      None => {
-        Err(MyError::NotFound)
-      }
+      Some(c) => Ok(axum::Json(c.clone())),
+      None => Err(MyError::NotFound),
     }
   }
 

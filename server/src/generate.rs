@@ -1,30 +1,36 @@
-use std::fs;
-use std::path::Path;
 use crate::file::create_writer;
 use crate::list::Identifiable;
-use crate::{model::{Client, DomainList}, list::IdentifiedList};
+use crate::{
+  list::IdentifiedList,
+  model::{Client, DomainList},
+};
 use anyhow::Result;
 use chrono::Utc;
-
+use std::fs;
+use std::path::Path;
 
 static DENY_RULE: &str = "deny_http_access";
 static ALLOW_RULE: &str = "allow_http_access";
 
 impl Identifiable for u32 {
-    fn id(&self) -> Option<u32> {
-        Some(*self)
-    }
+  fn id(&self) -> Option<u32> {
+    Some(*self)
+  }
 
-    fn set_id(&mut self, _: u32) {
-        unimplemented!()
-    }
+  fn set_id(&mut self, _: u32) {
+    unimplemented!()
+  }
 }
 
 fn id_string<T: Identifiable>(type_name: &str, item: &T) -> String {
   format!("{}_{:0>4}", type_name, item.id().unwrap())
 }
 
-pub fn generate_squid_config<P: AsRef<Path>>(out_dir: P, clients: &IdentifiedList<Client>, domainlists: &IdentifiedList<DomainList>) -> Result<()> {
+pub fn generate_squid_config<P: AsRef<Path>>(
+  out_dir: P,
+  clients: &IdentifiedList<Client>,
+  domainlists: &IdentifiedList<DomainList>,
+) -> Result<()> {
   let out_dir = out_dir.as_ref();
   fs::create_dir_all(out_dir)?;
 
@@ -34,15 +40,26 @@ pub fn generate_squid_config<P: AsRef<Path>>(out_dir: P, clients: &IdentifiedLis
 
     // First, figure out if there are any domains that are temporarily allowed due to a lease rule.
     let now = Utc::now();
-    let allowed_domains : Vec<_> = client.leases.iter()
-        .filter(|l| l.rule.kind == ALLOW_RULE && l.end_date_utc.unwrap() > now)
-        .flat_map(|l| l.rule.domainlists.iter() )
-        .collect();
+    let allowed_domains: Vec<_> = client
+      .leases
+      .iter()
+      .filter(|l| l.rule.kind == ALLOW_RULE && l.end_date_utc.unwrap() > now)
+      .flat_map(|l| l.rule.domainlists.iter())
+      .collect();
 
     b.writeln(format!("acl {} src {}", client_name, client.ip))?;
-    for domain in client.rules.iter().filter(|r| r.kind == DENY_RULE).flat_map(|r| r.domainlists.iter() ) {
+    for domain in client
+      .rules
+      .iter()
+      .filter(|r| r.kind == DENY_RULE)
+      .flat_map(|r| r.domainlists.iter())
+    {
       if !allowed_domains.contains(&domain) {
-        b.writeln(format!("http_access deny {} {}", client_name, id_string("domains", domain)))?;
+        b.writeln(format!(
+          "http_access deny {} {}",
+          client_name,
+          id_string("domains", domain)
+        ))?;
       }
     }
   }
@@ -52,7 +69,11 @@ pub fn generate_squid_config<P: AsRef<Path>>(out_dir: P, clients: &IdentifiedLis
 
     for domainlist in domainlists.items.iter() {
       let domainlist_name = id_string("domains", domainlist);
-      b.writeln(format!("acl {} dstdomain {}", domainlist_name, domainlist.domains.join(" ")))?;
+      b.writeln(format!(
+        "acl {} dstdomain {}",
+        domainlist_name,
+        domainlist.domains.join(" ")
+      ))?;
     }
   }
 

@@ -8,14 +8,12 @@ pub trait Identifiable {
 }
 
 pub struct IdentifiedList<T: Identifiable + Clone> {
-  pub items: Vec<T>
+  pub items: Vec<T>,
 }
 
 impl<T: Identifiable + Clone> IdentifiedList<T> {
   pub fn new(items: Vec<T>) -> Self {
-    Self {
-      items
-    }
+    Self { items }
   }
 
   /// Finds the item with the given id and returns it if it exists.
@@ -26,7 +24,11 @@ impl<T: Identifiable + Clone> IdentifiedList<T> {
   pub fn add(&mut self, item: T) -> &T {
     let mut owned = item.to_owned();
 
-    let max_id = self.items.iter().map(|c| c.id()).fold(0, |a, b| a.max(b.unwrap()));
+    let max_id = self
+      .items
+      .iter()
+      .map(|c| c.id())
+      .fold(0, |a, b| a.max(b.unwrap()));
     owned.set_id(max_id + 1);
     self.items.push(owned);
 
@@ -39,8 +41,8 @@ impl<T: Identifiable + Clone> IdentifiedList<T> {
       Some(pos) => {
         let _ = mem::replace(&mut self.items[pos], updated);
         self.items.get(pos)
-      },
-      None => None
+      }
+      None => None,
     }
   }
 
@@ -51,17 +53,16 @@ impl<T: Identifiable + Clone> IdentifiedList<T> {
       None
     }
   }
-
 }
 
 impl Identifiable for Client {
-    fn id(&self) -> Option<u32> {
-        self.id
-    }
+  fn id(&self) -> Option<u32> {
+    self.id
+  }
 
-    fn set_id(&mut self, id: u32) {
-        self.id = Some(id)
-    }
+  fn set_id(&mut self, id: u32) {
+    self.id = Some(id)
+  }
 }
 
 impl Identifiable for DomainList {
@@ -70,6 +71,6 @@ impl Identifiable for DomainList {
   }
 
   fn set_id(&mut self, id: u32) {
-      self.id = Some(id)
+    self.id = Some(id)
   }
 }

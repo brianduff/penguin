@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use chrono::{DateTime, Utc, NaiveDateTime};
 use chrono::serde::ts_milliseconds_option;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use confique::Config;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -15,7 +15,7 @@ pub struct Client {
   #[serde(skip_serializing_if = "Vec::is_empty", default)]
   pub rules: Vec<Rule>,
   #[serde(skip_serializing_if = "Vec::is_empty", default)]
-  pub leases: Vec<Lease>
+  pub leases: Vec<Lease>,
 }
 
 #[derive(Serialize, Deserialize, Clone, TS)]
@@ -23,7 +23,7 @@ pub struct Client {
 pub struct Rule {
   pub kind: String,
   #[serde(skip_serializing_if = "Vec::is_empty", default)]
-  pub domainlists: Vec<u32>
+  pub domainlists: Vec<u32>,
 }
 
 #[derive(Serialize, Deserialize, Clone, TS)]
@@ -31,9 +31,9 @@ pub struct Rule {
 pub struct Lease {
   #[serde(with = "ts_milliseconds_option")]
   pub end_date_utc: Option<DateTime<Utc>>,
-  #[deprecated(note="Use end_date_utc")]
+  #[deprecated(note = "Use end_date_utc")]
   pub end_date: Option<NaiveDateTime>,
-  pub rule: Rule
+  pub rule: Rule,
 }
 
 #[derive(Serialize, Deserialize, Clone, TS)]
@@ -42,7 +42,7 @@ pub struct DomainList {
   pub id: Option<u32>,
   pub name: String,
   #[serde(skip_serializing_if = "Vec::is_empty", default)]
-  pub domains: Vec<String>
+  pub domains: Vec<String>,
 }
 
 // App wide configuration
@@ -55,16 +55,18 @@ pub struct Conf {
   #[config(default = "logs")]
   pub squid_log_dir: String,
   #[config(default = false)]
-  pub hup_squid_daemon: bool
+  pub hup_squid_daemon: bool,
 }
 
 impl Conf {
   pub fn load() -> anyhow::Result<Conf> {
-    Ok(Conf::builder()
+    Ok(
+      Conf::builder()
         .env()
         .file("/opt/penguin/penguin.toml")
         .file("penguin.toml")
-        .load()?)
+        .load()?,
+    )
   }
 
   pub fn config_path(&self) -> PathBuf {
