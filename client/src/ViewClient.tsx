@@ -141,16 +141,6 @@ function Grid({ client }: Props) {
       (await (await updateClient(client)).andThen(revalidate)).andThen(closeDialog);
     }
 
-    // interface DomainListChooserProps {
-    //   title: string,
-    //   domains: Array<DomainList>,
-    //   selectedDomains: Set<DomainList>,
-    //   setSelectedDomains: (selected: Set<DomainList>) => void,
-    //   add: () => Promise<void>,
-    //   remove: (dlid: number) => Promise<void>,
-    //   pause: (dlid: number) => Promise<void>
-    // }
-
     function DomainListChooser() {
 
       const filterDomainLists: ItemPredicate<DomainList> = (query, dl, _index, exactMatch) => {
@@ -197,7 +187,7 @@ function Grid({ client }: Props) {
             }
             {
               (client.rules) &&
-              <Table columnNames={["Domain List", "Domains", ""]}>
+              <Table columnNames={["Domain List", "Domains", "", ""]}>
                 {client.rules.filter(r => r.kind === "deny_http_access").flatMap(r => r.domainlists).map(dlid =>
                 {
                   let domainList = domains.unwrap().filter(dl => dl.id === dlid)[0];
@@ -205,6 +195,7 @@ function Grid({ client }: Props) {
                     <tr key={domainList.id}>
                       <td>{domainList.name}</td>
                       <td><DomainsSummary domains={domainList.domains} /></td>
+                      <td><UnblockStatus dl={domainList} /></td>
                       <td>
                         <ButtonGroup minimal={true}>
                           <Button onClick={() => pause(domainList.id!)}><Pause /></Button>
@@ -250,6 +241,25 @@ function Grid({ client }: Props) {
           </SectionCard>
         </Section>
       );
+    }
+
+    interface UnblockStatusProps {
+      dl: DomainList
+    }
+
+    function UnblockStatus({ dl }: UnblockStatusProps) {
+      const leaseDates = client.leases
+          ?.filter(l => l.rule.kind === "allow_http_access")
+          .filter(l => l.rule.domainlists.includes(dl.id!))
+          .flatMap(l => l.end_date)
+          .map(d => new Date(d))
+          .sort();
+      if (leaseDates && leaseDates.length > 0) {
+        const lastDate = leaseDates[leaseDates.length - 1];
+        return <div css={css`color: #66ff66`}>Temporarily unblocked until {lastDate.toLocaleString()}</div>
+      }
+
+      return <span />
     }
 
 
