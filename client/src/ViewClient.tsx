@@ -252,7 +252,7 @@ function Grid({ client }: Props) {
           ?.filter(l => l.rule.kind === "allow_http_access")
           .filter(l => l.rule.domainlists.includes(dl.id!))
           .flatMap(l => l.end_date)
-          .map(d => new Date(d))
+          .map(d => new Date(d + "Z"))
           .sort();
       if (leaseDates && leaseDates.length > 0) {
         const lastDate = leaseDates[leaseDates.length - 1];
