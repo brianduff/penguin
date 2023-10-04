@@ -76,117 +76,6 @@ function Grid({ client }: Props) {
     );
   }
 
-  interface DomainListChooserProps {
-    title: string,
-    domains: Array<DomainList>,
-    selectedDomains: Set<DomainList>,
-    setSelectedDomains: (selected: Set<DomainList>) => void,
-    add: () => Promise<void>,
-    remove: (dlid: number) => Promise<void>,
-    pause: (dlid: number) => Promise<void>
-  }
-
-  function DomainListChooser({ title, domains, selectedDomains, setSelectedDomains, add, remove, pause }: DomainListChooserProps) {
-
-    const filterDomainLists: ItemPredicate<DomainList> = (query, dl, _index, exactMatch) => {
-      const normTitle = dl.name.toLowerCase();
-      const normQuery = query.toLowerCase();
-
-      if (exactMatch) {
-        return normTitle === normQuery;
-      }
-
-      return normTitle.indexOf(normQuery) >= 0;
-    };
-
-    const domainListRenderer: ItemRenderer<DomainList> = (dl, { handleClick, handleFocus, modifiers }) => {
-      if (!modifiers.matchesPredicate) {
-        return null;
-      }
-      return (
-        <MenuItem
-            active={modifiers.active}
-            disabled={modifiers.disabled}
-            key={dl.id}
-            labelElement={<DomainsSummary domains={dl.domains} />}
-            onClick={handleClick}
-            onFocus={handleFocus}
-            roleStructure="listoption"
-            text={dl.name}
-        />
-    );
-
-    }
-
-    const usedDomainListIds = new Set(client.rules?.flatMap(r => r.domainlists));
-    const unusedDomainLists = domains.filter(dl => dl.id != null && !usedDomainListIds.has(dl.id));
-
-
-    return (
-      <Section title={title}>
-        <SectionCard>
-          {(client.rules === undefined || client.rules.length === 0) &&
-            <p>
-              No domains are currently blocked for {client.name}. Choose domains
-              to block below and click add.
-            </p>
-          }
-          {
-            (client.rules) &&
-            <Table columnNames={["Domain List", "Domains", ""]}>
-              {client.rules.filter(r => r.kind === "deny_http_access").flatMap(r => r.domainlists).map(dlid =>
-              {
-                let domainList = domains.filter(dl => dl.id === dlid)[0];
-                return (
-                  <tr key={domainList.id}>
-                    <td>{domainList.name}</td>
-                    <td><DomainsSummary domains={domainList.domains} /></td>
-                    <td>
-                      <ButtonGroup minimal={true}>
-                        <Button onClick={() => pause(domainList.id!)}><Pause /></Button>
-                        <Button onClick={() => remove(domainList.id!)}><Remove /></Button>
-                      </ButtonGroup>
-                    </td>
-                  </tr>
-                );
-              })
-              }
-            </Table>
-          }
-
-        </SectionCard>
-        <SectionCard>
-          <div css={css`display: grid; grid-template-columns: 1fr auto; grid-gap: 10px;`}>
-          <MultiSelect<DomainList>
-              popoverProps={{ minimal: true }}
-              selectedItems={Array.from(selectedDomains)}
-              items={unusedDomainLists}
-              itemPredicate={filterDomainLists}
-              itemRenderer={domainListRenderer}
-              onItemSelect={(dl) => {
-                const copy = new Set<DomainList>(selectedDomains);
-                copy.add(dl);
-                setSelectedDomains(copy);
-              }}
-              onRemove={(dl) => {
-                const copy = new Set<DomainList>(selectedDomains);
-                copy.delete(dl);
-                setSelectedDomains(copy);
-              }}
-              onClear={() => setSelectedDomains(new Set())}
-              tagRenderer={(dl) => <span>{dl.name}</span>}
-          ></MultiSelect>
-
-          <Button
-              disabled={selectedDomains.size === 0}
-              onClick={add}
-          >Add</Button>
-
-          </div>
-        </SectionCard>
-      </Section>
-    );
-  }
 
   const { domains } = useRouteLoaderData("root") as AppGridLoaderData;
 
@@ -195,7 +84,7 @@ function Grid({ client }: Props) {
     const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
     const [pausingDl, setPausingDl] = useState<number | null>(null);
 
-    const addDls = async () => {
+    const add = async () => {
       if (client.rules === undefined) {
         client.rules = [];
       }
@@ -207,7 +96,7 @@ function Grid({ client }: Props) {
       (await updateClient(client)).andThen(revalidate);
     }
 
-    const removeDl = async (dlid: number) => {
+    const remove = async (dlid: number) => {
       const ruleIndex = client.rules?.findIndex(r => r.kind === "deny_http_access" && r.domainlists.includes(dlid));
       if (ruleIndex !== undefined) {
         const rule = client.rules[ruleIndex];
@@ -252,15 +141,120 @@ function Grid({ client }: Props) {
       (await (await updateClient(client)).andThen(revalidate)).andThen(closeDialog);
     }
 
+    // interface DomainListChooserProps {
+    //   title: string,
+    //   domains: Array<DomainList>,
+    //   selectedDomains: Set<DomainList>,
+    //   setSelectedDomains: (selected: Set<DomainList>) => void,
+    //   add: () => Promise<void>,
+    //   remove: (dlid: number) => Promise<void>,
+    //   pause: (dlid: number) => Promise<void>
+    // }
+
+    function DomainListChooser() {
+
+      const filterDomainLists: ItemPredicate<DomainList> = (query, dl, _index, exactMatch) => {
+        const normTitle = dl.name.toLowerCase();
+        const normQuery = query.toLowerCase();
+
+        if (exactMatch) {
+          return normTitle === normQuery;
+        }
+
+        return normTitle.indexOf(normQuery) >= 0;
+      };
+
+      const domainListRenderer: ItemRenderer<DomainList> = (dl, { handleClick, handleFocus, modifiers }) => {
+        if (!modifiers.matchesPredicate) {
+          return null;
+        }
+        return (
+          <MenuItem
+              active={modifiers.active}
+              disabled={modifiers.disabled}
+              key={dl.id}
+              labelElement={<DomainsSummary domains={dl.domains} />}
+              onClick={handleClick}
+              onFocus={handleFocus}
+              roleStructure="listoption"
+              text={dl.name}
+          />
+      );
+
+      }
+
+      const usedDomainListIds = new Set(client.rules?.flatMap(r => r.domainlists));
+      const unusedDomainLists = domains.unwrap().filter(dl => dl.id != null && !usedDomainListIds.has(dl.id));
+
+      return (
+        <Section title="Blocked domains">
+          <SectionCard>
+            {(client.rules === undefined || client.rules.length === 0) &&
+              <p>
+                No domains are currently blocked for {client.name}. Choose domains
+                to block below and click add.
+              </p>
+            }
+            {
+              (client.rules) &&
+              <Table columnNames={["Domain List", "Domains", ""]}>
+                {client.rules.filter(r => r.kind === "deny_http_access").flatMap(r => r.domainlists).map(dlid =>
+                {
+                  let domainList = domains.unwrap().filter(dl => dl.id === dlid)[0];
+                  return (
+                    <tr key={domainList.id}>
+                      <td>{domainList.name}</td>
+                      <td><DomainsSummary domains={domainList.domains} /></td>
+                      <td>
+                        <ButtonGroup minimal={true}>
+                          <Button onClick={() => pause(domainList.id!)}><Pause /></Button>
+                          <Button onClick={() => remove(domainList.id!)}><Remove /></Button>
+                        </ButtonGroup>
+                      </td>
+                    </tr>
+                  );
+                })
+                }
+              </Table>
+            }
+
+          </SectionCard>
+          <SectionCard>
+            <div css={css`display: grid; grid-template-columns: 1fr auto; grid-gap: 10px;`}>
+            <MultiSelect<DomainList>
+                popoverProps={{ minimal: true }}
+                selectedItems={Array.from(selected)}
+                items={unusedDomainLists}
+                itemPredicate={filterDomainLists}
+                itemRenderer={domainListRenderer}
+                onItemSelect={(dl) => {
+                  const copy = new Set<DomainList>(selected);
+                  copy.add(dl);
+                  setSelected(copy);
+                }}
+                onRemove={(dl) => {
+                  const copy = new Set<DomainList>(selected);
+                  copy.delete(dl);
+                  setSelected(copy);
+                }}
+                onClear={() => setSelected(new Set())}
+                tagRenderer={(dl) => <span>{dl.name}</span>}
+            ></MultiSelect>
+
+            <Button
+                disabled={selected.size === 0}
+                onClick={add}
+            >Add</Button>
+
+            </div>
+          </SectionCard>
+        </Section>
+      );
+    }
+
+
     return (<>
-      <DomainListChooser
-          title="Blocked domains"
-          domains={domains.unwrap()}
-          selectedDomains={selected}
-          setSelectedDomains={setSelected}
-          add={addDls}
-          remove={removeDl}
-          pause={pause} />
+      <DomainListChooser />
       <PauseDialog
           isOpen={pauseDialogOpen}
           setSelectedDate={savePause}
