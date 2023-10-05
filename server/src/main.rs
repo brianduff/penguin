@@ -33,6 +33,7 @@ mod list;
 mod model;
 mod restlist;
 mod squid;
+mod unifi;
 
 const PORT: u32 = 8080;
 
