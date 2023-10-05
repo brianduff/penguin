@@ -71,6 +71,8 @@ function Grid({ client }: Props) {
             <FieldEditor onSubmit={commitClient} field="name" original={client} />
             <span>IP&nbsp;Address:</span>
             <FieldEditor onSubmit={commitClient} field="ip" original={client} />
+            <span>Mac&nbsp;Address:</span>
+            <FieldEditor onSubmit={commitClient} field="mac_address" original={client} />
           </div>
         </SectionCard>
       </Section>
