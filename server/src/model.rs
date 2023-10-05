@@ -48,6 +48,27 @@ pub struct DomainList {
   pub domains: Vec<String>,
 }
 
+#[derive(Config, Clone, Debug)]
+pub struct UnifiConfig {
+  #[config(default = false)]
+  pub enabled: bool,
+  #[config(default = "https://192.168.1.1/")]
+  pub url: String,
+  pub username: Option<String>,
+  pub password: Option<String>,
+}
+
+impl Default for UnifiConfig {
+  fn default() -> Self {
+    Self {
+      enabled: false,
+      url: "https://192.168.1.1/".to_owned(),
+      username: None,
+      password: None
+    }
+  }
+}
+
 // App wide configuration
 #[derive(Config, Clone)]
 pub struct Conf {
@@ -59,6 +80,9 @@ pub struct Conf {
   pub squid_log_dir: String,
   #[config(default = false)]
   pub hup_squid_daemon: bool,
+
+  #[config(nested)]
+  pub unifi: UnifiConfig,
 }
 
 impl Conf {
