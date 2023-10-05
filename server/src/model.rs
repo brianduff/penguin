@@ -1,5 +1,5 @@
 use std::ffi::OsStr;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 
 use chrono::serde::ts_milliseconds_option;
 use chrono::{DateTime, NaiveDateTime, Utc};
