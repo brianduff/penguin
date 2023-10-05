@@ -1,9 +1,9 @@
 use std::ffi::OsStr;
-use std::path::PathBuf;
+use std::path::{PathBuf};
 
 use chrono::serde::ts_milliseconds_option;
 use chrono::{DateTime, NaiveDateTime, Utc};
-use confique::Config;
+use confique::{Config, Builder};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -70,7 +70,7 @@ impl Default for UnifiConfig {
 }
 
 // App wide configuration
-#[derive(Config, Clone)]
+#[derive(Config, Clone, Debug)]
 pub struct Conf {
   #[config(default = "config")]
   pub config_dir: String,
@@ -86,11 +86,9 @@ pub struct Conf {
 }
 
 impl Conf {
-  pub fn load() -> anyhow::Result<Conf> {
-    let mut builder = Conf::builder().env();
 
-    // Add any toml files in /opt/penguin/conf.d
-    let path = PathBuf::from("/opt/penguin/conf.d");
+  fn load_from_dir<P: Into<PathBuf>>(mut builder: Builder<Conf>, path: P) -> anyhow::Result<Builder<Conf>> {
+    let path : PathBuf = path.into();
     if path.is_dir() {
       for dir in path.read_dir()? {
         let entry = dir?.path();
@@ -99,6 +97,15 @@ impl Conf {
         }
       }
     }
+
+    Ok(builder)
+  }
+
+  pub fn load() -> anyhow::Result<Conf> {
+    let mut builder = Conf::builder().env();
+
+    builder = Self::load_from_dir(builder, "/opt/penguin/conf.d")?;
+    builder = Self::load_from_dir(builder, "dev.conf.d")?;
 
     Ok(
       builder
