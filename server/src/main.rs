@@ -17,7 +17,8 @@ use tower_http::{
   cors::{Any, CorsLayer},
   trace::{self, TraceLayer},
 };
-use tracing::{error, warn, Level};
+use tracing::{error, warn, Level, info};
+use unifi::UnifiClient;
 
 use crate::{
   file::{get_parent_or_die, read_json_value, write_json_value},
@@ -132,6 +133,8 @@ pub struct AppState {
 
   // App config
   app_config: Conf,
+
+  unifi_client: Arc<Mutex<Option<UnifiClient>>>,
 }
 
 impl AppState {
@@ -158,6 +161,7 @@ async fn main() {
     gen_config_lock: Arc::new(Mutex::new(0)),
     //       config_lock: Arc::new(Mutex::new(0)),
     app_config: Conf::load().unwrap(),
+    unifi_client: Arc::new(Mutex::new(None))
   };
 
   if let Err(e) = repair_client_json(&state).await {
@@ -189,6 +193,31 @@ async fn main() {
       })
       .await;
   });
+
+  if state.app_config.unifi.enabled {
+    if state.app_config.unifi.username.is_none() || state.app_config.unifi.password.is_none() {
+      error!("Support for Unifi is enabled in config, but username and password are not specified. Ignoring.");
+      return;
+    }
+
+    let state_for_unifi = state.clone();
+    tokio::spawn(async move {
+      let username = state_for_unifi.app_config.unifi.username.unwrap();
+      let password = state_for_unifi.app_config.unifi.password.unwrap();
+
+      let mut client = UnifiClient::new(&username, &password); // TODO: pass url
+      match client.login().await {
+        Ok(()) => {
+          let mut mutex = state_for_unifi.unifi_client.lock().unwrap();
+          *mutex = Some(client);
+          info!("Successfully connected to UniFi at {}", state_for_unifi.app_config.unifi.url);
+        },
+        Err(e) => {
+          error!("Support for unifi is enabled in config, but failed to log in: {:?}", e);
+        }
+      }
+    });
+  }
 
   // A permissive cors policy because we're expecting to be behind a firewall.
   let cors = CorsLayer::new()
