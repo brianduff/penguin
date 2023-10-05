@@ -115,6 +115,7 @@ impl UnifiClient {
       .send()
       .await?;
 
+    response.error_for_status_ref()?;
     self.update_cookie(&response)?;
 
     Ok(())
