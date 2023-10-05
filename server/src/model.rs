@@ -16,6 +16,8 @@ pub struct Client {
   pub rules: Vec<Rule>,
   #[serde(skip_serializing_if = "Vec::is_empty", default)]
   pub leases: Vec<Lease>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub mac_address: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Clone, TS)]
