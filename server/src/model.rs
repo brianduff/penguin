@@ -1,3 +1,4 @@
+use std::ffi::OsStr;
 use std::path::PathBuf;
 
 use chrono::serde::ts_milliseconds_option;
@@ -62,9 +63,21 @@ pub struct Conf {
 
 impl Conf {
   pub fn load() -> anyhow::Result<Conf> {
+    let mut builder = Conf::builder().env();
+
+    // Add any toml files in /opt/penguin/conf.d
+    let path = PathBuf::from("/opt/penguin/conf.d");
+    if path.is_dir() {
+      for dir in path.read_dir()? {
+        let entry = dir?.path();
+        if entry.extension() == Some(OsStr::new("toml")) {
+          builder = builder.file(entry);
+        }
+      }
+    }
+
     Ok(
-      Conf::builder()
-        .env()
+      builder
         .file("/opt/penguin/penguin.toml")
         .file("penguin.toml")
         .load()?,
