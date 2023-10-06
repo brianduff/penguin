@@ -349,6 +349,8 @@ function Grid({ client, netaccess }: Props) {
   function Logs() {
     const { isLoading, error, data: logs } = useQuery(["proxylogs", client.ip], () => getProxyLogs(client));
 
+    console.log(error);
+
     // Group logs by day, then by domain.
     let groupedLogs = new Map<number, Map<string, Array<LogEntry>>>();
 
