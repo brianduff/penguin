@@ -134,7 +134,7 @@ pub struct AppState {
   // App config
   app_config: Conf,
 
-  unifi_client: Arc<Mutex<Option<UnifiClient>>>,
+  unifi_client: Arc<tokio::sync::Mutex<Option<UnifiClient>>>,
 }
 
 impl AppState {
@@ -161,7 +161,7 @@ async fn main() {
     gen_config_lock: Arc::new(Mutex::new(0)),
     //       config_lock: Arc::new(Mutex::new(0)),
     app_config: Conf::load().unwrap(),
-    unifi_client: Arc::new(Mutex::new(None))
+    unifi_client: Arc::new(tokio::sync::Mutex::new(None))
   };
 
   if let Err(e) = repair_client_json(&state).await {
@@ -208,7 +208,7 @@ async fn main() {
       let mut client = UnifiClient::new(&username, &password); // TODO: pass url
       match client.login().await {
         Ok(()) => {
-          let mut mutex = state_for_unifi.unifi_client.lock().unwrap();
+          let mut mutex = state_for_unifi.unifi_client.lock_owned().await;
           *mutex = Some(client);
           info!("Successfully connected to UniFi at {}", state_for_unifi.app_config.unifi.url);
         },

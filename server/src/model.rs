@@ -48,6 +48,14 @@ pub struct DomainList {
   pub domains: Vec<String>,
 }
 
+#[derive(Serialize, Deserialize, Clone, TS)]
+pub struct NetAccess {
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub mac_address: Option<String>,
+  /// Is internet access enabled for this mac address?
+  pub enabled: bool
+}
+
 #[derive(Config, Clone, Debug)]
 pub struct UnifiConfig {
   #[config(default = false)]
