@@ -14,6 +14,7 @@ pub fn api_routes() -> Router<AppState> {
     .nest("/v1/client", clients::routes())
     .nest("/v1/domainlist", domains::routes())
     .nest("/v1/netaccess", netaccess::routes())
+    .nest("/v1/logs/proxy", logs::proxy::routes())
 }
 
 mod clients {
@@ -306,4 +307,24 @@ mod netaccess {
     }
   }
 
+}
+
+
+mod logs {
+  use super::*;
+
+  pub(super) mod proxy {
+    use crate::squid::{LogEntry, get_all_logs};
+
+    use super::*;
+
+    pub fn routes() -> Router<AppState> {
+      Router::new()
+        .route("/", routing::get(get_all))
+    }
+
+    async fn get_all() -> Result<Json<Vec<LogEntry>>> {
+      Ok(Json(get_all_logs()?))
+    }
+  }
 }

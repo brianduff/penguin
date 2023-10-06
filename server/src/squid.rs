@@ -1,7 +1,10 @@
-use std::process::Command;
+use std::{process::Command, path::PathBuf, fs::File, io::{BufReader, Read}};
 
 use anyhow::{anyhow, Context, Result};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Utc, serde::ts_milliseconds};
+use flate2::read::GzDecoder;
+use serde::{Serialize, Deserialize};
+use std::io::BufRead;
 
 /// Request that squid reload its configuration.
 /// This requires an entry in /etc/sudoers, otherwise it'll prompt for a
@@ -17,8 +20,42 @@ pub fn reload_config() {
   }
 }
 
-#[derive(PartialEq)]
-struct LogEntry {
+/// Gets all Squid logs by reading files in the log directory.
+/// TODO: hoist log location out into a config variable.
+pub fn get_all_logs() -> Result<Vec<LogEntry>> {
+  let log_dir = PathBuf::from("/var/log/squid");
+
+  let mut result = Vec::new();
+  for entry in log_dir.read_dir()? {
+    let path = entry?.path();
+    if let Some(file_name) = path.file_name() {
+      let file_name = file_name.to_str().ok_or_else(|| anyhow!("Invalid path"))?;
+      if file_name.starts_with("access.log") {
+        let file = File::open(&path)?;
+        if file_name.ends_with(".gz") {
+          read_logs(GzDecoder::new(file), &mut result)?;
+        } else {
+          read_logs(file, &mut result)?;
+        };
+      }
+    }
+  }
+
+  Ok(result)
+}
+
+fn read_logs<R: Read>(read: R, out: &mut Vec<LogEntry>) -> Result<()> {
+  let buf = BufReader::new(read);
+  for line in buf.lines() {
+    out.push(LogEntry::parse(&line?)?);
+  }
+
+  Ok(())
+}
+
+#[derive(PartialEq, Serialize, Deserialize, Debug)]
+pub struct LogEntry {
+  #[serde(with = "ts_milliseconds")]
   date: DateTime<Utc>,
   response_time_millis: u64,
   client_ip: String,
