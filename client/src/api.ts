@@ -1,6 +1,7 @@
 import { Client } from "./bindings/Client";
 import { DomainList } from "./bindings/DomainList";
 import { NetAccess } from "./bindings/NetAccess";
+import { LogEntry } from "./bindings/LogEntry";
 import { Result } from "./result";
 
 var BASE_URL = "http://localhost:8080/";
@@ -82,4 +83,8 @@ export async function updateNetAccess(netAccess: NetAccess) {
 
 export async function createNetAccess(netAccess: NetAccess) {
   return req<NetAccess>("netaccess", "POST", netAccess);
+}
+
+export async function getProxyLogs(client: Client) {
+  return get<Array<LogEntry>>(`logs/proxy?client_id=${client.id}`)
 }

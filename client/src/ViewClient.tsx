@@ -7,7 +7,7 @@ import { css } from "@emotion/react";
 import { Delete, Edit, Pause, Play, Remove } from "@blueprintjs/icons";
 import { MultiSelect, ItemPredicate, ItemRenderer } from "@blueprintjs/select";
 import { useRef, useState } from "react";
-import { createNetAccess, deleteClient, updateClient, updateNetAccess } from "./api";
+import { createNetAccess, deleteClient, getProxyLogs, updateClient, updateNetAccess } from "./api";
 import { FieldEditor } from "./components/FieldEditor";
 import { DomainList } from "./bindings/DomainList";
 import { AppGridLoaderData, ViewClientLoaderData } from "./main";
@@ -17,6 +17,8 @@ import { SimpleSelect } from "./components/SimpleSelect";
 import { Lease } from "./bindings/Lease";
 import { NetAccess } from "./bindings/NetAccess";
 import { gridStyle } from "./commonstyles";
+import { useQuery } from "react-query";
+import { LogEntry } from "./bindings/LogEntry";
 
 export function ViewClient() {
   const data = useLoaderData() as Result<ViewClientLoaderData>;
@@ -32,6 +34,7 @@ interface Props {
 }
 
 function Grid({ client, netaccess }: Props) {
+
   const revalidator = useRevalidator();
   const revalidate = async (value: any) => {
     revalidator.revalidate();
@@ -308,6 +311,7 @@ function Grid({ client, netaccess }: Props) {
     }
 
 
+
     return (<>
       <DomainListChooser />
       <PauseDialog
@@ -328,10 +332,70 @@ function Grid({ client, netaccess }: Props) {
     return leases;
   }
 
+  function get_domain(logFqdn: string) {
+    let parts = logFqdn.split("/");
+    let fqdn = parts[parts.length - 1];
+    let fqdn_parts = fqdn.split(".");
+
+    let tld = fqdn_parts[fqdn_parts.length - 1];
+    if (tld === "com" || tld === "org" || tld === "net") {
+      return [fqdn_parts[fqdn_parts.length - 2], fqdn_parts[fqdn_parts.length - 1]].join(".");
+    }
+
+    fqdn_parts.splice(0, 1);
+    return fqdn_parts.join(".");
+  }
+
+  function Logs() {
+    const { isLoading, error, data: logs } = useQuery(["proxylogs", client.ip], () => getProxyLogs(client));
+
+    // Group logs by day, then by domain.
+    let groupedLogs = new Map<number, Map<string, Array<LogEntry>>>();
+
+    if (logs && logs.isOk()) {
+      let now = new Date();
+      for (const entry of logs.unwrap()) {
+        let days = Math.floor((now.getTime() - entry.date) / (1000 * 3600 * 24));
+        let dayMap = groupedLogs.get(days);
+        if (dayMap === undefined) {
+          dayMap = new Map<string, Array<LogEntry>>();
+          groupedLogs.set(days, dayMap);
+        }
+
+        let domain = get_domain(entry.peer_fqdn);
+        let arr = dayMap.get(domain);
+        if (arr === undefined) {
+          arr = new Array<LogEntry>();
+          dayMap.set(domain, arr);
+        }
+        arr.push(entry);
+      }
+    }
+
+
+    return (
+      <Section title="Logs">
+        <SectionCard>
+          {isLoading && <p>Loading...</p>}
+          {logs && <p>I got {logs?.unwrap().length} log entries for this client!</p>}
+          {new Array(...groupedLogs.entries()).map(([day, entries]) => (
+            <li>{day} days ago<ul>
+              {new Array(...entries).map(([domain, logEntries]) => (
+                <li>{domain} - {logEntries.length} times</li>
+              ))}
+              </ul>
+            </li>
+          ))}
+        </SectionCard>
+      </Section>
+    )
+  }
+
   return (
     <div css={gridStyle}>
       <BlockedDomains />
       <ClientDetails />
+      <Logs />
     </div>
   )
 }
