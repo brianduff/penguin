@@ -2,4 +2,4 @@
 import type { Lease } from "./Lease";
 import type { Rule } from "./Rule";
 
-export interface Client { id: number | null, ip: string, name: string, rules: Array<Rule>, leases: Array<Lease>, mac_address: string | null | undefined }
+export interface Client { id: number | null, ip: string, name: string, rules: Array<Rule>, leases: Array<Lease>, mac_address?: string }
