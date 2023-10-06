@@ -5,6 +5,7 @@ import { css } from '@emotion/react';
 import { Outlet, useMatches } from 'react-router-dom';
 import { Alignment, Breadcrumbs, Navbar } from '@blueprintjs/core';
 import { CustomBreadcrumb, CustomBreadcrumbCurrent } from './components/CustomBreadcrumb';
+import { gridStyle } from './commonstyles';
 
 
 function App() {
@@ -30,12 +31,6 @@ function App() {
 }
 
 export function AppGrid() {
-  const gridStyle = css`
-    display: grid;
-    width: 100%;
-    grid-template-columns: 50% 50%;
-    grid-gap: 18px;
-  `
   return (
     <div css={gridStyle}>
       <span><Clients /></span>

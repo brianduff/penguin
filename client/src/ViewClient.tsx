@@ -16,6 +16,7 @@ import { Table } from "./components/Table";
 import { SimpleSelect } from "./components/SimpleSelect";
 import { Lease } from "./bindings/Lease";
 import { NetAccess } from "./bindings/NetAccess";
+import { gridStyle } from "./commonstyles";
 
 export function ViewClient() {
   const data = useLoaderData() as Result<ViewClientLoaderData>;
@@ -87,7 +88,11 @@ function Grid({ client, netaccess }: Props) {
         </>
         }>
         <SectionCard>
-          <div css={css`display: grid; grid-template-columns: auto 1fr; grid-gap: 10px;`}>
+          <div css={css`
+                display: grid;
+                grid-template-columns: auto 1fr;
+                grid-gap: 10px;`
+            }>
             <span>Name:</span>
             <FieldEditor onSubmit={commitClient} field="name" original={client} />
             <span>IP&nbsp;Address:</span>
@@ -322,12 +327,6 @@ function Grid({ client, netaccess }: Props) {
     }
     return leases;
   }
-
-  const gridStyle = css`
-    display: grid;
-    grid-gap: 18px;
-    grid-template-columns: 1fr 1fr;
-  `;
 
   return (
     <div css={gridStyle}>
