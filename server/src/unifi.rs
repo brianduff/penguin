@@ -4,6 +4,8 @@ use reqwest_tracing::TracingMiddleware;
 use serde::{Serialize, Deserialize, de::DeserializeOwned};
 use serde_json::json;
 use anyhow::{anyhow, Result};
+use reqwest::StatusCode;
+use tracing::info;
 
 pub struct UnifiClient {
   device_url: String,
@@ -75,23 +77,35 @@ impl UnifiClient {
     Ok(response.json().await?)
   }
 
-  async fn req<RQ: Serialize, RS: DeserializeOwned>(&mut self, method: Method, path: &str, body: &RQ) -> Result<RS> {
-    let response =
-      self.json_request(method, path)
-      ?.body(serde_json::to_string_pretty(body)?)
-      .send()
-      .await?;
+  async fn req_impl<RQ: Serialize, RS: DeserializeOwned>(&mut self, method: Method, path: &str, body: Option<&RQ>) -> Result<RS> {
+    let mut first_try = true;
+    let response = loop {
+      let mut req = self.json_request(method.clone(), path)?;
+      if let Some(body) = body {
+        req = req.body(serde_json::to_string_pretty(body)?);
+      }
+      let response = req.send().await?;
+      if response.status() == StatusCode::UNAUTHORIZED && first_try {
+        first_try = false;
+        info!("Refreshing auth credentials for Unifi");
+        self.login().await?;
+        continue;
+      } else {
+        break response;
+      }
+    };
 
     self.handle_response(response).await
   }
 
-  async fn get<RS: DeserializeOwned>(&mut self, path: &str) -> Result<RS> {
-    let response =
-      self.json_request(Method::GET, path)?
-      .send()
-      .await?;
+  async fn req<RQ: Serialize, RS: DeserializeOwned>(&mut self, method: Method, path: &str, body: &RQ) -> Result<RS> {
+    self.req_impl(method, path, Some(body)).await
+  }
 
-    self.handle_response(response).await
+  async fn get<RS: DeserializeOwned>(&mut self, path: &str) -> Result<RS> {
+    // String type to satisfy type checker for Option<RQ>. However, this should really
+    // be the none type (!) when it's implemented: see https://github.com/rust-lang/rust/issues/35121.
+    self.req_impl::<String, RS>(Method::GET, path, None).await
   }
 
   pub async fn get_traffic_rules(&mut self) -> Result<Vec<TrafficRule>> {
