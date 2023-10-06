@@ -1,4 +1,6 @@
-use reqwest::{Response, Client, RequestBuilder, Method};
+use reqwest::{Response, Method};
+use reqwest_middleware::{RequestBuilder, ClientWithMiddleware};
+use reqwest_tracing::TracingMiddleware;
 use serde::{Serialize, Deserialize, de::DeserializeOwned};
 use serde_json::json;
 use anyhow::{anyhow, Result};
@@ -56,8 +58,10 @@ impl UnifiClient {
     Err(anyhow!("Invalid cookie. Try login() again"))
   }
 
-  fn reqwest_client() -> Result<Client> {
-    Ok(reqwest::Client::builder().danger_accept_invalid_certs(true).build()?)
+  fn reqwest_client() -> Result<ClientWithMiddleware> {
+    let reqwest_client = reqwest::Client::builder().danger_accept_invalid_certs(true).build()?;
+
+    Ok(reqwest_middleware::ClientBuilder::new(reqwest_client).with(TracingMiddleware::default()).build())
   }
 
   fn json_request(&mut self, method: Method, path: &str) -> Result<RequestBuilder> {

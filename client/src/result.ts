@@ -15,10 +15,10 @@ export class Result<T> {
     return new Result<T>(undefined, error);
   }
 
-  async andThen(op: (value: T) => Promise<Result<T>>) {
+  async andThen<R>(op: (value: T) => Promise<Result<R>>) {
     return this.match({
       ok: (value) => op(value),
-      err: (err) => Promise.resolve(Result.Err<T>(err))
+      err: (err) => Promise.resolve(Result.Err<R>(err))
     })
   }
 

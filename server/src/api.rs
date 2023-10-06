@@ -211,6 +211,9 @@ mod netaccess {
             enabled: !*enabled
           })
         }
+
+        println!("{:?}", result);
+
         Ok(result)
       }
     }

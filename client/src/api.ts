@@ -1,5 +1,6 @@
 import { Client } from "./bindings/Client";
 import { DomainList } from "./bindings/DomainList";
+import { NetAccess } from "./bindings/NetAccess";
 import { Result } from "./result";
 
 var BASE_URL = "http://localhost:8080/";
@@ -69,4 +70,16 @@ export async function createDomainList(domainList: DomainList) {
 
 export async function updateDomainList(domainList: DomainList) {
   return req<DomainList>(`domainlist/${domainList.id}`, "PUT", domainList)
+}
+
+export async function getNetAccess(mac: string) {
+  return get<NetAccess>(`netaccess/${mac}`)
+}
+
+export async function updateNetAccess(netAccess: NetAccess) {
+  return req<NetAccess>(`netaccess/${netAccess.mac_address}`, "PUT", netAccess);
+}
+
+export async function createNetAccess(netAccess: NetAccess) {
+  return req<NetAccess>("netaccess", "POST", netAccess);
 }

@@ -2,37 +2,37 @@ import { useLoaderData, useNavigate, useRevalidator, useRouteLoaderData } from "
 import { ErrorMessage } from "./components/ErrorMessage";
 import { Result } from "./result";
 import { Client } from "./bindings/Client";
-import { Button, ButtonGroup, Dialog, DialogBody, DialogFooter, EditableText, MenuItem, Section, SectionCard } from "@blueprintjs/core";
+import { Button, ButtonGroup, Dialog, DialogBody, DialogFooter, EditableText, MenuItem, Section, SectionCard, Switch } from "@blueprintjs/core";
 import { css } from "@emotion/react";
 import { Delete, Edit, Pause, Play, Remove } from "@blueprintjs/icons";
 import { MultiSelect, ItemPredicate, ItemRenderer } from "@blueprintjs/select";
 import { useRef, useState } from "react";
-import { deleteClient, updateClient } from "./api";
+import { createNetAccess, deleteClient, updateClient, updateNetAccess } from "./api";
 import { FieldEditor } from "./components/FieldEditor";
 import { DomainList } from "./bindings/DomainList";
-import { AppGridLoaderData } from "./main";
+import { AppGridLoaderData, ViewClientLoaderData } from "./main";
 import { DomainsSummary } from "./Domains";
 import { Table } from "./components/Table";
 import { SimpleSelect } from "./components/SimpleSelect";
 import { Lease } from "./bindings/Lease";
+import { NetAccess } from "./bindings/NetAccess";
 
 export function ViewClient() {
-  const client = useLoaderData() as Result<Client>;
-
-
-  return client.match({
-    ok: client => <div><Grid client={client} /></div>,
+  const data = useLoaderData() as Result<ViewClientLoaderData>;
+  return data.match({
+    ok: data => <div><Grid client={data.client.unwrap()} netaccess={data.netaccess?.unwrap()} /></div>,
     err: msg => <ErrorMessage message={msg} />
   })
 }
 
 interface Props {
-  client: Client
+  client: Client,
+  netaccess?: NetAccess
 }
 
-function Grid({ client }: Props) {
+function Grid({ client, netaccess }: Props) {
   const revalidator = useRevalidator();
-  const revalidate = async (value: Client) => {
+  const revalidate = async (value: any) => {
     revalidator.revalidate();
     return Result.Ok(value);
   }
@@ -58,6 +58,27 @@ function Grid({ client }: Props) {
       return (await (await deleteClient(client)).andThen(revalidate)).andThen(navigateToClients);
     }
 
+    let proxyRequired = false;
+    if (client.mac_address) {
+      if (netaccess) {
+        proxyRequired = !netaccess.enabled;
+      }
+    }
+
+    const toggleProxyRequired = async () => {
+      let fullInternetEnabled = !proxyRequired;
+      if (netaccess) {
+        netaccess.enabled = fullInternetEnabled;
+        (await updateNetAccess(netaccess)).andThen(revalidate);
+      } else {
+        netaccess = {
+          mac_address: client.mac_address!,
+          enabled: fullInternetEnabled
+        };
+        (await createNetAccess(netaccess)).andThen(revalidate);
+      }
+    };
+
     return (
       <Section title="Details" rightElement={
         <>
@@ -73,6 +94,13 @@ function Grid({ client }: Props) {
             <FieldEditor onSubmit={commitClient} field="ip" original={client} />
             <span>Mac&nbsp;Address:</span>
             <FieldEditor onSubmit={commitClient} field="mac_address" original={client} />
+            <span css={css`grid-column: 1 / 3;`}>
+              <Switch
+                  checked={proxyRequired}
+                  disabled={client.mac_address == undefined}
+                  onChange={toggleProxyRequired}
+              >Proxy required to access internet</Switch>
+            </span>
           </div>
         </SectionCard>
       </Section>

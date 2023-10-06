@@ -48,7 +48,7 @@ pub struct DomainList {
   pub domains: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, TS)]
+#[derive(Serialize, Deserialize, Clone, TS, Debug)]
 pub struct NetAccess {
   pub mac_address: String,
   /// Is internet access enabled for this mac address?

@@ -5,9 +5,10 @@ import './index.css'
 import { ViewClient } from './ViewClient.tsx'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
-import { getClient, getClients, getDomainList, getDomainLists } from './api.ts'
+import { getClient, getClients, getDomainList, getDomainLists, getNetAccess } from './api.ts'
 import { Result } from './result.ts'
 import { DomainList } from './bindings/DomainList.ts'
+import { NetAccess } from './bindings/NetAccess.ts'
 import { Client } from './bindings/Client.ts'
 import { Desktop, GlobeNetwork, Home } from '@blueprintjs/icons'
 import { ViewDomains } from './ViewDomains.tsx'
@@ -18,6 +19,34 @@ export interface AppGridLoaderData {
   clients: Result<Client[]>,
   domains: Result<DomainList[]>
 }
+
+export interface ViewClientLoaderData {
+  client: Result<Client>,
+  netaccess?: Result<NetAccess>
+}
+
+const fetchClient = async (id: string) => {
+  return queryClient.fetchQuery(["client", id], () => getClient(id))
+}
+
+const fetchNetAccess = async (client: Client) => {
+  if (client.mac_address !== undefined) {
+    let netaccess : Result<NetAccess> | undefined = await queryClient.fetchQuery(["netaccess", client.mac_address], () => getNetAccess(client.mac_address!));
+    // Yicky error handling
+    if (netaccess?.isErr()) {
+      netaccess = undefined;
+    }
+    return Result.Ok({
+      client: Result.Ok(client),
+      netaccess
+    } as ViewClientLoaderData)
+  } else {
+    return Result.Ok({
+      client: Result.Ok(client)
+    } as ViewClientLoaderData)
+  }
+}
+
 
 const router = createBrowserRouter([
   {
@@ -46,11 +75,11 @@ const router = createBrowserRouter([
         path: "client/:id",
         element: <ViewClient />,
         loader: async ({ params }) => {
-          return queryClient.fetchQuery("client", () => getClient(params.id!))
+          return (await fetchClient(params.id!)).andThen(fetchNetAccess)
         },
         handle: {
           crumb: (data: any) => {
-            let client = (data as Result<Client>).unwrap();
+            let client = (data as Result<ViewClientLoaderData>).unwrap().client.unwrap();
             return ({ href: `/client/${client.id}`, text: client.name, icon: <Desktop />})
           }
         }
