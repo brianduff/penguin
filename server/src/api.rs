@@ -173,7 +173,7 @@ mod domains {
 mod netaccess {
   use std::collections::HashMap;
 
-  use crate::model::NetAccess;
+  use crate::{model::NetAccess, unifi::{TrafficRule, TargetDevice}};
 
   use super::*;
   use anyhow::anyhow;
@@ -181,9 +181,9 @@ mod netaccess {
   pub(super) fn routes() -> Router<AppState> {
     Router::new()
       .route("/", routing::get(get_all))
-      // .route("/", routing::post(post))
-      // .route("/:mac", routing::get(get))
-      // .route("/:mac", routing::put(put))
+      .route("/:mac", routing::get(get))
+      .route("/", routing::post(post))
+      .route("/:mac", routing::put(put))
       // .route("/:mac", routing::delete(delete))
   }
 
@@ -193,7 +193,6 @@ mod netaccess {
     match unifi_client {
       None => Err(anyhow!("No unifi client")),
       Some(client) => {
-        // let rules = client.get_traffic_rules().await.or_else(|r| Err(MyError::Failed(r)));
         let rules = client.get_traffic_rules().await?;
 
         let mut mac_to_state = HashMap::new();
@@ -208,7 +207,7 @@ mod netaccess {
         let mut result = Vec::new();
         for (mac, enabled) in mac_to_state.iter() {
           result.push(NetAccess {
-            mac_address: Some(mac.to_owned()),
+            mac_address: mac.to_owned(),
             enabled: !*enabled
           })
         }
@@ -220,4 +219,88 @@ mod netaccess {
   async fn get_all(State(state): State<AppState>) -> Result<Json<Vec<NetAccess>>> {
     Ok(Json(get_all_netaccess(state).await?))
   }
+
+  async fn get(State(state): State<AppState>, Path(mac): Path<String>) -> Result<Json<NetAccess>> {
+    let all = get_all_netaccess(state).await?;
+
+    for access in all {
+      if access.mac_address == mac.clone() {
+        return Ok(Json(access));
+      }
+    }
+
+    Err(MyError::NotFound)
+  }
+
+  async fn post(State(state): State<AppState>, extract::Json(access): extract::Json<NetAccess>) -> Result<Json<NetAccess>> {
+    let all = get_all_netaccess(state.clone()).await?;
+    for a in all {
+      if a.mac_address == access.mac_address {
+        return Err(MyError::BadRequest("Access already exists".to_owned()))
+      }
+    }
+
+    let new_rule = create_block_rule(&access.mac_address, access.enabled);
+
+    let mut unifi_client = state.unifi_client.lock().await;
+    let unifi_client = unifi_client.as_mut();
+
+    match unifi_client {
+      None => Err(MyError::BadRequest("No unifi client".to_owned())),
+      Some(client) => {
+        client.create_traffic_rule(&new_rule).await?;
+
+        Ok(Json(access))
+      }
+    }
+  }
+
+  fn create_block_rule(mac_address: &str, enabled: bool) -> TrafficRule {
+    let mut new_rule = TrafficRule::block_internet();
+    new_rule.enabled = enabled;
+    new_rule.description = "Traffic rule created by Penguin".to_owned();
+    new_rule.target_devices = Vec::new();
+    new_rule.target_devices.push(TargetDevice::for_client_mac(mac_address));
+
+    new_rule
+  }
+
+  async fn put(State(state): State<AppState>, Path(mac): Path<String>, extract::Json(access): extract::Json<NetAccess>) -> Result<Json<NetAccess>> {
+    if access.mac_address != mac {
+      return Err(MyError::BadRequest("Mac address doesn't match".to_owned()));
+    }
+
+    let mut unifi_client = state.unifi_client.lock().await;
+    let unifi_client = unifi_client.as_mut();
+    match unifi_client {
+      None => Err(MyError::BadRequest("No unifi client".to_owned())),
+      Some(client) => {
+        let mut rules = client.get_traffic_rules().await?;
+
+        for rule in rules.iter_mut().filter(|r| r.action == "BLOCK" && r.matching_target == "INTERNET") {
+          // If this rule has a single target device and it matches, just make sure the enabled flag
+          // is correct.
+          if rule.target_devices.len() == 1 && rule.target_devices.first().unwrap().client_mac == mac {
+            if rule.enabled != access.enabled {
+              rule.enabled = access.enabled;
+              client.update_traffic_rule(rule).await?;
+            }
+          } else if let Some(pos) = rule.target_devices.iter().position(|d| d.client_mac == mac) {
+            if rule.enabled != access.enabled {
+              // We need to pull this mac address out of this rule into its own separate rule. First, create the new rule.
+              let new_rule = create_block_rule(&mac, access.enabled);
+              client.create_traffic_rule(&new_rule).await?;
+
+              // Now remove the target device from its existing rule.
+              rule.target_devices.remove(pos);
+              client.update_traffic_rule(rule).await?;
+            }
+          }
+        }
+
+        Ok(Json(access))
+      }
+    }
+  }
+
 }

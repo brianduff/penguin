@@ -50,8 +50,7 @@ pub struct DomainList {
 
 #[derive(Serialize, Deserialize, Clone, TS)]
 pub struct NetAccess {
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub mac_address: Option<String>,
+  pub mac_address: String,
   /// Is internet access enabled for this mac address?
   pub enabled: bool
 }
