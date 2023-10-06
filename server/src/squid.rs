@@ -58,7 +58,7 @@ pub struct LogEntry {
   #[serde(with = "ts_milliseconds")]
   date: DateTime<Utc>,
   response_time_millis: u64,
-  client_ip: String,
+  pub client_ip: String,
   client_fqdn: String,
   status_code: String,
   request_size_bytes: u64,

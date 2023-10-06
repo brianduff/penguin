@@ -314,6 +314,9 @@ mod logs {
   use super::*;
 
   pub(super) mod proxy {
+    use axum::extract::Query;
+    use serde::Deserialize;
+    use serde_with::{NoneAsEmptyString, serde_as};
     use crate::squid::{LogEntry, get_all_logs};
 
     use super::*;
@@ -323,8 +326,30 @@ mod logs {
         .route("/", routing::get(get_all))
     }
 
-    async fn get_all() -> Result<Json<Vec<LogEntry>>> {
-      Ok(Json(get_all_logs()?))
+    #[serde_as]
+    #[derive(Deserialize)]
+    struct LogQuery {
+      #[serde_as(as = "NoneAsEmptyString")]
+      client_id: Option<u32>
+    }
+
+    async fn get_all(State(state): State<AppState>, query: Option<Query<LogQuery>>) -> Result<Json<Vec<LogEntry>>> {
+      let mut logs = get_all_logs()?;
+
+      if let Some(query) = query {
+        if let Some(client_id) = query.client_id {
+          // Look up the client's ip address.
+          let clients = JsonRestList::<Client>::load(state.app_config.clients_json())?;
+          let ip = clients.list.items.iter().find_map(|c| if c.id.unwrap() == client_id { Some(c.ip.to_owned()) } else { None } );
+          if let Some(ip) = ip {
+            logs.retain(|e| e.client_ip == ip);
+          } else {
+            logs.clear();
+          }
+        }
+      }
+
+      Ok(Json(logs))
     }
   }
 }
