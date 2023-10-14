@@ -12,6 +12,7 @@ import { NetAccess } from './bindings/NetAccess.ts'
 import { Client } from './bindings/Client.ts'
 import { Desktop, GlobeNetwork, Home } from '@blueprintjs/icons'
 import { ViewDomains } from './ViewDomains.tsx'
+import { GoogleAccountProvider } from './components/GoogleAuth.tsx'
 
 const queryClient = new QueryClient();
 
@@ -102,11 +103,12 @@ const router = createBrowserRouter([
   }
 ])
 
-
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <GoogleAccountProvider>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </GoogleAccountProvider>
   </React.StrictMode>,
 )

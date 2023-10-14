@@ -337,13 +337,20 @@ function Grid({ client, netaccess }: Props) {
     let fqdn = parts[parts.length - 1];
     let fqdn_parts = fqdn.split(".");
 
+    let result = undefined;
+
     let tld = fqdn_parts[fqdn_parts.length - 1];
     if (tld === "com" || tld === "org" || tld === "net") {
-      return [fqdn_parts[fqdn_parts.length - 2], fqdn_parts[fqdn_parts.length - 1]].join(".");
+      result = [fqdn_parts[fqdn_parts.length - 2], fqdn_parts[fqdn_parts.length - 1]].join(".");
     }
 
     fqdn_parts.splice(0, 1);
-    return fqdn_parts.join(".");
+    result = fqdn_parts;
+
+    if (result === undefined || result.length === 0) {
+      console.log("Failed to parse fqdn", logFqdn);
+    }
+    return result.join(".");
   }
 
   function Logs() {
@@ -382,9 +389,11 @@ function Grid({ client, netaccess }: Props) {
           {logs && <p>I got {logs?.unwrap().length} log entries for this client!</p>}
           {new Array(...groupedLogs.entries()).map(([day, entries]) => (
             <li>{day} days ago<ul>
-              {new Array(...entries).map(([domain, logEntries]) => (
-                <li>{domain} - {logEntries.length} times</li>
-              ))}
+              {new Array(...entries).map(([domain, logEntries]) =>
+                {
+                  return (<li>{domain} - {logEntries.length} times</li>);
+                }
+              )}
               </ul>
             </li>
           ))}

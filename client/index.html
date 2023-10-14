@@ -4,10 +4,38 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://accounts.google.com/gsi/client" async></script>
+
+    <script>
+      function handleSignIn(data) {
+        console.log("Sign in with ", data)
+      }
+    </script>
     <title>Penguin</title>
   </head>
+
+
   <body class="bp5-dark" style="background-color: #293742; width: 100%;">
-    <div id="root" style="width: 100%"></div>
+    <!-- <div id="g_id_onload"
+     data-client_id="898187078436-49mhvq2bai7te9vjobma6sei8s68iaj9.apps.googleusercontent.com"
+     data-context="signin"
+     data-callback="handleSignIn"
+     data-auto_select="true"
+     data-use_fedcm_for_prompt="true"
+     data-itp_support="true">
+   </div> -->
+
+  <div id="root" style="width: 100%"></div>
+
+
+  <!-- <div class="g_id_signin"
+      data-type="standard"
+      data-shape="rectangular"
+      data-theme="filled_black"
+      data-text="signin_with"
+      data-size="large"
+      data-logo_alignment="left">
+  </div> -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

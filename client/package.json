@@ -16,13 +16,17 @@
     "@blueprintjs/select": "^5.0.12",
     "@emotion/react": "^11.11.1",
     "@swc/plugin-emotion": "^2.5.81",
+    "jwt-decode": "^3.1.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-query": "^3.39.3",
-    "react-router-dom": "^6.16.0"
+    "react-router-dom": "^6.16.0",
+    "use-session-storage-state": "^18.2.0"
   },
   "devDependencies": {
     "@emotion/babel-plugin": "^11.11.0",
+    "@types/google-one-tap": "^1.2.3",
+    "@types/google.accounts": "^0.0.12",
     "@types/jest": "^29.5.5",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
