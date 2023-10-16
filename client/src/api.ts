@@ -3,6 +3,7 @@ import { DomainList } from "./bindings/DomainList";
 import { NetAccess } from "./bindings/NetAccess";
 import { LogEntry } from "./bindings/LogEntry";
 import { Result } from "./result";
+import { getGoogleCredential } from "./components/GoogleAuth";
 
 var BASE_URL = "http://localhost:8080/";
 if (import.meta.env.PROD) {
@@ -17,12 +18,23 @@ async function req<T>(path: string, method: string, body: any) : Promise<Result<
   let options: RequestInit = {
     method,
   };
+  let headers = {};
+
+  let token = getGoogleCredential();
+  if (token) {
+    headers = {
+      "Authorization": `Bearer ${token}`
+    }
+  }
+
   if (body) {
-    options.headers = {
+    headers = {
       "Content-Type": "application/json"
     }
     options.body = JSON.stringify(body);
   }
+
+  options.headers = headers;
 
   console.log(`${method} ${path}`, body)
   let result = await fetch(`${BASE_URL}api/v1/${path}`, options);

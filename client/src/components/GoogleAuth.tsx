@@ -9,7 +9,7 @@ var handleSignIn = function(r: CredentialResponse) {
   window.sessionStorage.setItem("jwt", googleCredential);
 }
 
-function getGoogleCredential() {
+export function getGoogleCredential() {
   if (googleCredential) {
     return googleCredential;
   }
