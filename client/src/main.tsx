@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { createRef, useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom/client'
 import App, { AppGrid } from './App.tsx'
 import './index.css'
@@ -13,6 +13,7 @@ import { Client } from './bindings/Client.ts'
 import { Desktop, GlobeNetwork, Home } from '@blueprintjs/icons'
 import { ViewDomains } from './ViewDomains.tsx'
 import { GoogleAccountProvider } from './components/GoogleAuth.tsx'
+import { css } from '@emotion/react'
 
 const queryClient = new QueryClient();
 
@@ -105,10 +106,53 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <GoogleAccountProvider>
+    <GoogleAccountProvider unauthedChildren={<SplashScreen />}>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
       </QueryClientProvider>
     </GoogleAccountProvider>
   </React.StrictMode>,
 )
+
+
+function SplashScreen() {
+  return (
+    <div css={css`
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      height: 100vh;
+    `}>
+      <div>
+        <p><img src="penguin.png" css={css`max-width: 50vw`} /></p>
+        <p>Use of Penguin is restricted to authorized users.</p>
+        <GoogleSignInButton />
+      </div>
+    </div>
+  )
+}
+
+
+function GoogleSignInButton() {
+  const buttonRef = createRef<HTMLDivElement>();
+
+  useEffect(() => {
+    const element = buttonRef.current;
+    if (element) {
+      google.accounts.id.renderButton(element, {
+        "theme": "outline",
+        "size": "large",
+      });
+    } else {
+      console.log("Element is null?")
+    }
+  }, [buttonRef.current]);
+
+  return (
+    <>
+      <div className="GSign" css={css`text-align: center; align-items: center; display: inline-block;`} ref={buttonRef}>
+      </div>
+    </>
+  )
+}

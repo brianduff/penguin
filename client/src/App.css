@@ -2,3 +2,10 @@
 @import "@blueprintjs/core/lib/css/blueprint.css";
 @import "@blueprintjs/icons/lib/css/blueprint-icons.css";
 
+iframe {
+  color-scheme: normal;
+}
+
+div > .GSign {
+  text-align: center;
+}
