@@ -1,7 +1,6 @@
 import { CredentialResponse, IdConfiguration } from "google-one-tap";
 import jwtDecode from "jwt-decode";
 import { ReactNode, createContext } from "react"
-import useSessionStorageState from "use-session-storage-state";
 
 var googleCredential : string | null = null;
 var handleSignIn = function(r: CredentialResponse) {
