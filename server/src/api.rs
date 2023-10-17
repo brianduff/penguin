@@ -8,6 +8,9 @@ use axum::{
   extract::{self, Path},
   routing, Json,
 };
+use axum::middleware;
+
+use crate::auth::auth;
 
 pub fn api_routes() -> Router<AppState> {
   Router::new()
@@ -19,15 +22,16 @@ pub fn api_routes() -> Router<AppState> {
 
 mod clients {
 
-  use super::*;
+
+use super::*;
 
   pub(super) fn routes() -> Router<AppState> {
     Router::new()
-      .route("/", routing::get(get_all))
-      .route("/", routing::post(post))
-      .route("/:id", routing::get(get))
-      .route("/:id", routing::put(put))
-      .route("/:id", routing::delete(delete))
+      .route("/", routing::get(get_all).route_layer(middleware::from_fn(auth)))
+      .route("/", routing::post(post).route_layer(middleware::from_fn(auth)))
+      .route("/:id", routing::get(get).route_layer(middleware::from_fn(auth)))
+      .route("/:id", routing::put(put).route_layer(middleware::from_fn(auth)))
+      .route("/:id", routing::delete(delete).route_layer(middleware::from_fn(auth)))
   }
 
   fn check<F, S: Into<String>>(test: F, message: S) -> Result<()>
@@ -130,11 +134,11 @@ mod domains {
 
   pub(super) fn routes() -> Router<AppState> {
     Router::new()
-      .route("/", routing::get(get_all))
-      .route("/", routing::post(post))
-      .route("/:id", routing::get(get))
+      .route("/", routing::get(get_all).route_layer(middleware::from_fn(auth)))
+      .route("/", routing::post(post).route_layer(middleware::from_fn(auth)))
+      .route("/:id", routing::get(get).route_layer(middleware::from_fn(auth)))
       .route("/:id", routing::put(put))
-      .route("/:id", routing::delete(delete))
+      .route("/:id", routing::delete(delete).route_layer(middleware::from_fn(auth)))
   }
 
   fn load(state: &AppState) -> anyhow::Result<JsonRestList<DomainList>> {
@@ -181,10 +185,10 @@ mod netaccess {
 
   pub(super) fn routes() -> Router<AppState> {
     Router::new()
-      .route("/", routing::get(get_all))
-      .route("/:mac", routing::get(get))
-      .route("/", routing::post(post))
-      .route("/:mac", routing::put(put))
+      .route("/", routing::get(get_all).route_layer(middleware::from_fn(auth)))
+      .route("/:mac", routing::get(get).route_layer(middleware::from_fn(auth)))
+      .route("/", routing::post(post).route_layer(middleware::from_fn(auth)))
+      .route("/:mac", routing::put(put).route_layer(middleware::from_fn(auth)))
       // .route("/:mac", routing::delete(delete))
   }
 

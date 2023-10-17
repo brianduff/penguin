@@ -27,6 +27,7 @@ use crate::{
 };
 
 mod api;
+mod auth;
 mod errors;
 mod file;
 mod generate;

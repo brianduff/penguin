@@ -1,12 +1,13 @@
 use std::fmt::Display;
 
-use axum::response::IntoResponse;
+use axum::response::{IntoResponse, Response};
 
 #[derive(Debug)]
 pub enum MyError {
   Failed(anyhow::Error),
   NotFound,
   BadRequest(String),
+  NotAuthorized
 }
 
 impl Display for MyError {
@@ -27,21 +28,29 @@ impl IntoResponse for MyError {
     match self {
       MyError::BadRequest(m) => {
         tracing::error!("Bad request: {:?}", m);
-        (axum::http::StatusCode::BAD_REQUEST, m.to_owned())
+        (axum::http::StatusCode::BAD_REQUEST, m.to_owned()).into_response()
       }
       MyError::Failed(e) => {
         tracing::error!("Internal error: {:?}", e);
         (
           axum::http::StatusCode::INTERNAL_SERVER_ERROR,
           format!("An internal error occurred: {:?}", e),
-        )
+        ).into_response()
       }
       MyError::NotFound => {
         tracing::error!("Error: not found");
-        (axum::http::StatusCode::NOT_FOUND, "".to_owned())
+        (axum::http::StatusCode::NOT_FOUND, "".to_owned()).into_response()
+      }
+      MyError::NotAuthorized => {
+        tracing::error!("Error: not authorized");
+
+        (
+          axum::http::StatusCode::UNAUTHORIZED,
+          [("WWW-Authenticate", "Bearer")],
+          "Not authorized".to_owned()
+        ).into_response()
       }
     }
-    .into_response()
   }
 }
 

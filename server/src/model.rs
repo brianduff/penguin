@@ -88,6 +88,12 @@ pub struct Conf {
   #[config(default = false)]
   pub hup_squid_daemon: bool,
 
+  #[config(default = false)]
+  pub require_auth: bool,
+
+  #[config(default = [])]
+  pub authorized_users: Vec<String>,
+
   #[config(nested)]
   pub unifi: UnifiConfig,
 }
