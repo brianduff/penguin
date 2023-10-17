@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use axum::response::{IntoResponse, Response};
+use axum::response::IntoResponse;
 
 #[derive(Debug)]
 pub enum MyError {

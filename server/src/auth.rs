@@ -1,8 +1,8 @@
-use axum::{response::IntoResponse, http::Request, middleware::Next, extract::State};
+use axum::{response::IntoResponse, http::Request, middleware::Next};
 use base64::{Engine as _, engine::general_purpose};
 use serde::Deserialize;
 use anyhow::anyhow;
-use crate::{errors::MyError, AppState, model::Conf};
+use crate::{errors::MyError, model::Conf};
 
 
 pub struct AuthedUser {
