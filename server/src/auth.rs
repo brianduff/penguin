@@ -53,7 +53,7 @@ pub async fn auth<B>(mut req: Request<B>, next: Next<B>) -> Result<impl IntoResp
 // For now, though, just yank the claim. You can easily fake auth by just crafting
 // a JWT with someone elses email address, so this is totally, totally, totally, insecure.
 fn decode(token: &str) -> anyhow::Result<Claims> {
-  let mut parts = token.split(".");
+  let mut parts = token.split('.');
   let _ = parts.next().ok_or(anyhow!("Invalid token"))?;
   let payload = parts.next().ok_or(anyhow!("Invalid token"))?;
   let _ = parts.next().ok_or(anyhow!("Invalid token"))?;
@@ -67,7 +67,6 @@ fn decode(token: &str) -> anyhow::Result<Claims> {
 #[derive(Deserialize)]
 struct Claims {
   email: String,
-  aud: String,
-  iss: String
+  aud: String
 }
 
