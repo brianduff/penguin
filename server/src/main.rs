@@ -185,7 +185,7 @@ async fn main() {
   // expired leases from our own configuration.
   let state_for_cron = state.clone();
   tokio::spawn(async move {
-    every(2)
+    every(30)
       .seconds()
       .perform(|| async {
         if let Err(err) = possibly_regenerate_config(state_for_cron.clone()).await {
