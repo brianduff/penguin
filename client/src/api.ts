@@ -18,19 +18,15 @@ async function req<T>(path: string, method: string, body: any) : Promise<Result<
   let options: RequestInit = {
     method,
   };
-  let headers = {};
+  let headers : { [key: string]: string } = {};
 
   let token = getGoogleCredential();
   if (token) {
-    headers = {
-      "Authorization": `Bearer ${token}`
-    }
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
   if (body) {
-    headers = {
-      "Content-Type": "application/json"
-    }
+    headers["Content-Type"] = "application/json";
     options.body = JSON.stringify(body);
   }
 
