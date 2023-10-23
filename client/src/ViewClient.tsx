@@ -70,14 +70,17 @@ function Grid({ client, netaccess }: Props) {
     }
 
     const toggleProxyRequired = async () => {
-      let fullInternetEnabled = !proxyRequired;
+      // We're toggling, so our new state is !proxyRequired.
+      let newProxyRequired = !proxyRequired;
+
+      let internetEnabled = !newProxyRequired;
       if (netaccess) {
-        netaccess.enabled = fullInternetEnabled;
+        netaccess.enabled = internetEnabled;
         (await updateNetAccess(netaccess)).andThen(revalidate);
       } else {
         netaccess = {
           mac_address: client.mac_address!,
-          enabled: fullInternetEnabled
+          enabled: internetEnabled
         };
         (await createNetAccess(netaccess)).andThen(revalidate);
       }

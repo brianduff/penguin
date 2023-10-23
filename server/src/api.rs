@@ -182,6 +182,7 @@ mod netaccess {
 
   use super::*;
   use anyhow::anyhow;
+use tracing::{info, error};
 
   pub(super) fn routes() -> Router<AppState> {
     Router::new()
@@ -249,7 +250,8 @@ mod netaccess {
       }
     }
 
-    let new_rule = create_block_rule(&access.mac_address, access.enabled);
+    let block_should_enable = !access.enabled;
+    let new_rule = create_block_rule(&access.mac_address, block_should_enable);
 
     let mut unifi_client = state.unifi_client.lock().await;
     let unifi_client = unifi_client.as_mut();
@@ -279,6 +281,8 @@ mod netaccess {
       return Err(MyError::BadRequest("Mac address doesn't match".to_owned()));
     }
 
+    error!("Putting netaccess for {}: {:?}", mac, access);
+
     let mut unifi_client = state.unifi_client.lock().await;
     let unifi_client = unifi_client.as_mut();
     match unifi_client {
@@ -287,17 +291,19 @@ mod netaccess {
         let mut rules = client.get_traffic_rules().await?;
 
         for rule in rules.iter_mut().filter(|r| r.action == "BLOCK" && r.matching_target == "INTERNET") {
+          // The block should be enabled if internet access is disabled.
+          let block_should_enable = !access.enabled;
           // If this rule has a single target device and it matches, just make sure the enabled flag
           // is correct.
           if rule.target_devices.len() == 1 && rule.target_devices.first().unwrap().client_mac == mac {
-            if rule.enabled != access.enabled {
-              rule.enabled = access.enabled;
+            if rule.enabled != block_should_enable {
+              rule.enabled = block_should_enable;
               client.update_traffic_rule(rule).await?;
             }
           } else if let Some(pos) = rule.target_devices.iter().position(|d| d.client_mac == mac) {
-            if rule.enabled != access.enabled {
+            if rule.enabled != block_should_enable {
               // We need to pull this mac address out of this rule into its own separate rule. First, create the new rule.
-              let new_rule = create_block_rule(&mac, access.enabled);
+              let new_rule = create_block_rule(&mac, block_should_enable);
               client.create_traffic_rule(&new_rule).await?;
 
               // Now remove the target device from its existing rule.
