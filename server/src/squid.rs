@@ -26,17 +26,19 @@ pub fn get_all_logs() -> Result<Vec<LogEntry>> {
   let log_dir = PathBuf::from("/var/log/squid");
 
   let mut result = Vec::new();
-  for entry in log_dir.read_dir()? {
-    let path = entry?.path();
-    if let Some(file_name) = path.file_name() {
-      let file_name = file_name.to_str().ok_or_else(|| anyhow!("Invalid path"))?;
-      if file_name.starts_with("access.log") {
-        let file = File::open(&path)?;
-        if file_name.ends_with(".gz") {
-          read_logs(GzDecoder::new(file), &mut result)?;
-        } else {
-          read_logs(file, &mut result)?;
-        };
+  if log_dir.exists() {
+    for entry in log_dir.read_dir()? {
+      let path = entry?.path();
+      if let Some(file_name) = path.file_name() {
+        let file_name = file_name.to_str().ok_or_else(|| anyhow!("Invalid path"))?;
+        if file_name.starts_with("access.log") {
+          let file = File::open(&path)?;
+          if file_name.ends_with(".gz") {
+            read_logs(GzDecoder::new(file), &mut result)?;
+          } else {
+            read_logs(file, &mut result)?;
+          };
+        }
       }
     }
   }
