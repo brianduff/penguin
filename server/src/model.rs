@@ -1,11 +1,17 @@
+use anyhow::Result;
+use std::collections::HashMap;
 use std::ffi::OsStr;
+use std::fs::File;
+use std::io::{BufReader, BufWriter};
 use std::path::PathBuf;
 
-use chrono::serde::ts_milliseconds_option;
+use chrono::serde::{ts_milliseconds, ts_milliseconds_option};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use confique::{Config, Builder};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
+
+use crate::file::create_file;
 
 #[derive(Serialize, Deserialize, Clone, TS)]
 //#[ts(export)]
@@ -52,7 +58,19 @@ pub struct DomainList {
 pub struct NetAccess {
   pub mac_address: String,
   /// Is internet access enabled for this mac address?
-  pub enabled: bool
+  pub enabled: bool,
+
+  /// At around the given time, access will automatically be disabled.
+  #[serde(with = "ts_milliseconds_option")]
+  pub auto_disable_at: Option<DateTime<Utc>>
+}
+
+// A configuration value that's persisted to disk in a map of
+// mac address -> NetAccessSettings.
+#[derive(Serialize, Deserialize, Clone, TS, Debug)]
+pub struct NetAccessConfig {
+  #[serde(with = "ts_milliseconds")]
+  pub auto_disable_at: DateTime<Utc>
 }
 
 #[derive(Config, Clone, Debug)]
@@ -139,4 +157,31 @@ impl Conf {
   pub fn domains_json(&self) -> PathBuf {
     self.config_path().join("domains.json")
   }
+
+  pub fn netaccess_json(&self) -> PathBuf {
+    self.config_path().join("netaccess.json")
+  }
+
+  pub fn load_netaccess_config(&self) -> Result<HashMap<String, NetAccessConfig>> {
+    let path = self.netaccess_json();
+    let items = if path.exists() {
+      let file = File::open(&path)?;
+      let reader = BufReader::new(file);
+
+      serde_json::from_reader(reader)?
+    } else {
+      HashMap::new()
+    };
+
+    Ok(items)
+  }
+
+  pub fn save_netaccess_config(&self, config: HashMap<String, NetAccessConfig>) -> Result<()> {
+    let file = create_file(self.netaccess_json())?;
+    let mut writer = BufWriter::new(file);
+    serde_json::to_writer_pretty(&mut writer, &config)?;
+
+    Ok(())
+  }
+
 }

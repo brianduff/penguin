@@ -189,7 +189,6 @@ mod netaccess {
       .route("/:mac", routing::get(get).route_layer(middleware::from_fn(auth)))
       .route("/", routing::post(post).route_layer(middleware::from_fn(auth)))
       .route("/:mac", routing::put(put).route_layer(middleware::from_fn(auth)))
-      // .route("/:mac", routing::delete(delete))
   }
 
   async fn get_all_netaccess(state: AppState) -> anyhow::Result<Vec<NetAccess>> {
@@ -200,24 +199,26 @@ mod netaccess {
       Some(client) => {
         let rules = client.get_traffic_rules().await?;
 
-        let mut mac_to_state = HashMap::new();
+        let mut mac_to_is_blocked = HashMap::new();
         for rule in rules {
           if rule.action == "BLOCK" && rule.matching_target == "INTERNET" {
             for device in rule.target_devices {
-              mac_to_state.insert(device.client_mac, rule.enabled);
+              mac_to_is_blocked.insert(device.client_mac, rule.enabled);
             }
           }
         }
 
+        // Load the local configuration so we can get auto_disable_at values.
+        let netaccess_config = state.app_config.load_netaccess_config()?;
+
         let mut result = Vec::new();
-        for (mac, enabled) in mac_to_state.iter() {
+        for (mac, blocked) in mac_to_is_blocked.iter() {
           result.push(NetAccess {
             mac_address: mac.to_owned(),
-            enabled: !*enabled
+            enabled: !*blocked,  // Access to the internet is ENABLED if the block internet rule is DISABLED
+            auto_disable_at: netaccess_config.get(mac).map(|v| v.auto_disable_at)
           })
         }
-
-        println!("{:?}", result);
 
         Ok(result)
       }
