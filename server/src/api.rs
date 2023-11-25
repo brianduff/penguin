@@ -182,7 +182,7 @@ mod netaccess {
 
   use super::*;
   use anyhow::anyhow;
-use tracing::{info, error};
+  use tracing::error;
 
   pub(super) fn routes() -> Router<AppState> {
     Router::new()
@@ -299,7 +299,18 @@ use tracing::{info, error};
             if rule.enabled != block_should_enable {
               rule.enabled = block_should_enable;
               client.update_traffic_rule(rule).await?;
+
+              // TODO: implement auto disable.
+              // // TODO: implement this in the other (POST) path
+              // if access.enabled {
+              //   // Auto disable access in 1 hour.
+              //   let now = Utc::now();
+              //   let disable_at = now + Duration::hours(1);
+
+              // }
             }
+
+
           } else if let Some(pos) = rule.target_devices.iter().position(|d| d.client_mac == mac) {
             if rule.enabled != block_should_enable {
               // We need to pull this mac address out of this rule into its own separate rule. First, create the new rule.
