@@ -27,10 +27,18 @@ pub struct Client {
   pub mac_address: Option<String>
 }
 
+#[derive(Copy, Clone, TS, Serialize, Deserialize, PartialEq)]
+pub enum RuleKind {
+  #[serde(rename = "allow_http_access")]
+  AllowHttpAccess,
+  #[serde(rename = "deny_http_access")]
+  DenyHttpAccess
+}
+
 #[derive(Serialize, Deserialize, Clone, TS)]
 //#[ts(export)]
 pub struct Rule {
-  pub kind: String,
+  pub kind: RuleKind,
   #[serde(skip_serializing_if = "Vec::is_empty", default)]
   pub domainlists: Vec<u32>,
 }

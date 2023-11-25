@@ -1,5 +1,6 @@
 use crate::file::create_writer;
 use crate::list::Identifiable;
+use crate::model::RuleKind;
 use crate::{
   list::IdentifiedList,
   model::{Client, DomainList},
@@ -8,9 +9,6 @@ use anyhow::Result;
 use chrono::Utc;
 use std::fs;
 use std::path::Path;
-
-static DENY_RULE: &str = "deny_http_access";
-static ALLOW_RULE: &str = "allow_http_access";
 
 impl Identifiable for u32 {
   fn id(&self) -> Option<u32> {
@@ -43,7 +41,7 @@ pub fn generate_squid_config<P: AsRef<Path>>(
     let allowed_domains: Vec<_> = client
       .leases
       .iter()
-      .filter(|l| l.rule.kind == ALLOW_RULE && l.end_date_utc.unwrap() > now)
+      .filter(|l| l.rule.kind == RuleKind::AllowHttpAccess && l.end_date_utc.unwrap() > now)
       .flat_map(|l| l.rule.domainlists.iter())
       .collect();
 
@@ -51,7 +49,7 @@ pub fn generate_squid_config<P: AsRef<Path>>(
     for domain in client
       .rules
       .iter()
-      .filter(|r| r.kind == DENY_RULE)
+      .filter(|r| r.kind == RuleKind::DenyHttpAccess)
       .flat_map(|r| r.domainlists.iter())
     {
       if !allowed_domains.contains(&domain) {
