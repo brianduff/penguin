@@ -19,6 +19,7 @@ import { NetAccess } from "./bindings/NetAccess";
 import { gridStyle } from "./commonstyles";
 import { useQuery } from "react-query";
 import { LogEntry } from "./bindings/LogEntry";
+import { RuleKind } from "./bindings/Rule";
 
 export function ViewClient() {
   const data = useLoaderData() as Result<ViewClientLoaderData>;
@@ -131,7 +132,7 @@ function Grid({ client, netaccess }: Props) {
         client.rules = [];
       }
       client.rules.push({
-        kind: "deny_http_access",
+        kind: RuleKind.DENY_HTTP_ACCESS,
         domainlists: Array.from(selected).map((dl) => dl.id!)
       });
 
@@ -176,7 +177,7 @@ function Grid({ client, netaccess }: Props) {
         end_date: null,
         end_date_utc: new Date(end).getTime(),
         rule: {
-          kind: "allow_http_access",
+          kind: RuleKind.ALLOW_HTTP_ACCESS,
           domainlists: [ pausingDl! ]
         }
       });
