@@ -6,10 +6,11 @@ use std::{
 
 use api::api_routes;
 use axum::{extract::State, routing::get, Router};
-use chrono::{NaiveDateTime, Utc};
+use chrono::{DateTime, Local, NaiveDateTime, Timelike, Utc};
 use model::{Conf, DomainList};
 use restlist::JsonRestList;
 use serde_json::Value;
+use squid::ActiveState;
 use tempdir::TempDir;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio_schedule::{every, Job};
@@ -244,6 +245,10 @@ async fn main() {
     poll_statusz().await;
   });
 
+  tokio::spawn(async move {
+    every(10).minutes().perform(proxy_schedule).await;
+  });
+
   axum::Server::bind(&format!("0.0.0.0:{}", PORT).parse().unwrap())
     .serve(app.into_make_service())
     .await
@@ -251,6 +256,34 @@ async fn main() {
 }
 
 static TRIES: u8 = 50;
+
+/// Keeps the proxy running only at certain times of the day.
+/// This should be generalized and not hardcoded here.
+async fn proxy_schedule() {
+  let now = Local::now();
+
+  // The proxy is up between 7am and 9:30pm.
+  let proxy_up = now.hour() >= 7 && (now.hour() < 21 || (now.hour() == 21 && now.minute() < 30));
+
+  // Check the current status.
+  let status = squid::get_status();
+  let currently_up = matches!(status.active, ActiveState::Active);
+
+  if proxy_up != currently_up {
+    if proxy_up {
+      info!("Proxy should be up at this time but isn't. Starting now.");
+    } else {
+      info!("Proxy should be down at this time but isn't. Stopping now.")
+    }
+
+    info!("Hour={}. Minute={}", now.hour(), now.minute());
+
+    let result = squid::set_running(proxy_up);
+    if let Err(result) = result {
+      warn!("Failed to enable or disable proxy: {:?}. Will try again in 10 minutes", result);
+    }
+  }
+}
 
 async fn poll_statusz() {
   let mut tries = 0;
