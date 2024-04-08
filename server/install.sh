@@ -45,6 +45,7 @@ sudo cp penguin.service /etc/systemd/system/
 sudo systemctl daemon-reload
 
 sudo service penguin start
+sudo service squid start
 sudo kill -HUP $(cat /run/squid.pid)
 
 # Build the client
