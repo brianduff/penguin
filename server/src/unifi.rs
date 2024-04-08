@@ -237,7 +237,7 @@ pub struct Schedule {
   pub date_start: Option<String>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub date_end: Option<String>,
-  pub repeat_on_days: Vec<u32>,
+  pub repeat_on_days: Vec<String>,
   pub time_all_day: bool,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub time_range_start: Option<String>,
