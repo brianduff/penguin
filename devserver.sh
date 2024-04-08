@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "Starting dev server"
+
 # Source and destination directories
 SOURCE_DIR="/mnt/penguindev"
 DESTINATION_DIR="/home/ubuntu/dev/penguin_dev"
@@ -16,7 +18,7 @@ while true; do
 
   # Compare the previous and current checksum
   if [ "$PREV_CHECKSUM" != "$CURRENT_CHECKSUM" ]; then
-    echo "Changes detected, updating..."
+    echo "Detected changes - updating server"
     # Sync the directories
     rsync -av --exclude='**/.jj/**' --exclude='**/.git/**' --exclude='**/target/**' --exclude='**/dist/**' --exclude='**/node_modules/**' --delete "$SOURCE_DIR" "$DESTINATION_DIR"
     # Update previous checksum
@@ -32,8 +34,7 @@ while true; do
         npm install &&
         npm run build &&
         sudo cp -r dist/* /opt/penguin/web
-  else
-    echo "No changes detected."
+    echo "Listening for updates..."
   fi
 
   # Wait for the specified duration
