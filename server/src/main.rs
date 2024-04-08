@@ -246,6 +246,7 @@ async fn main() {
   });
 
   tokio::spawn(async move {
+    proxy_schedule().await;
     every(10).minutes().perform(proxy_schedule).await;
   });
 
