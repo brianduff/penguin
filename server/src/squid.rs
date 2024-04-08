@@ -70,15 +70,18 @@ impl ServiceStatus {
 /// Get the current status of the squid service.
 pub fn get_status() -> ServiceStatus {
   let output = Command::new("/usr/sbin/service")
-    .args(["status", "squid"])
+    .args(["squid", "status"])
     .output();
 
   match output {
     Ok(out) => {
-      if out.status.success() {
+      let code = out.status.code().ok_or(-1).unwrap();
+      if (0..=4).contains(&code) {
         ServiceStatus::from_output(&String::from_utf8(out.stdout).unwrap())
       } else {
-        error!("/usr/sbin/service status squid failed: {}", String::from_utf8(out.stderr).unwrap());
+        error!("/usr/sbin/service status squid failed: {}\n{}",
+          String::from_utf8(out.stdout).unwrap(),
+          String::from_utf8(out.stderr).unwrap());
         ServiceStatus {
           active: ActiveState::Unknown
         }
