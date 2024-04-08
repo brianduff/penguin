@@ -246,7 +246,7 @@ async fn main() {
   });
 
   tokio::spawn(async move {
-    every(10).seconds().perform(proxy_schedule).await;
+    every(10).minutes().perform(proxy_schedule).await;
   });
 
   axum::Server::bind(&format!("0.0.0.0:{}", PORT).parse().unwrap())
