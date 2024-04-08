@@ -2,7 +2,7 @@ use anyhow::Result;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs::File;
-use std::io::{BufReader, BufWriter};
+use std::io::BufReader;
 use std::path::PathBuf;
 
 use chrono::serde::{ts_milliseconds, ts_milliseconds_option};
@@ -10,8 +10,6 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use confique::{Config, Builder};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
-
-use crate::file::create_file;
 
 #[derive(Serialize, Deserialize, Clone, TS)]
 //#[ts(export)]
@@ -184,12 +182,12 @@ impl Conf {
     Ok(items)
   }
 
-  pub fn save_netaccess_config(&self, config: HashMap<String, NetAccessConfig>) -> Result<()> {
-    let file = create_file(self.netaccess_json())?;
-    let mut writer = BufWriter::new(file);
-    serde_json::to_writer_pretty(&mut writer, &config)?;
+  // pub fn save_netaccess_config(&self, config: HashMap<String, NetAccessConfig>) -> Result<()> {
+  //   let file = create_file(self.netaccess_json())?;
+  //   let mut writer = BufWriter::new(file);
+  //   serde_json::to_writer_pretty(&mut writer, &config)?;
 
-    Ok(())
-  }
+  //   Ok(())
+  // }
 
 }

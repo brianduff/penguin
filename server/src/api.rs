@@ -387,7 +387,7 @@ mod proxy {
       .route("/", routing::get(get))
   }
 
-  async fn get(State(state): State<AppState>) -> Result<Json<ServiceStatus>> {
+  async fn get() -> Result<Json<ServiceStatus>> {
     let status = get_status();
 
     Ok(Json(status))
