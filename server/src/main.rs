@@ -6,7 +6,7 @@ use std::{
 
 use api::api_routes;
 use axum::{extract::State, routing::get, Router};
-use chrono::{DateTime, Local, NaiveDateTime, Timelike, Utc};
+use chrono::{Local, NaiveDateTime, Timelike, Utc};
 use model::{Conf, DomainList};
 use restlist::JsonRestList;
 use serde_json::Value;
