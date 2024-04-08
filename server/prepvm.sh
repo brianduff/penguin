@@ -15,5 +15,4 @@ source "$HOME/.cargo/env"
 mkdir dev
 pushd dev
 git clone https://github.com/brianduff/penguin.git
-pushd penguin
-cargo build
+. "$HOME/.cargo/env"
