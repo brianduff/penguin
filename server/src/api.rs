@@ -379,17 +379,32 @@ mod logs {
 
 
 mod proxy {
-  use crate::squid::{get_status, ServiceStatus};
+  use crate::squid::{self, get_status, ActiveState, ServiceStatus};
   use super::*;
 
   pub fn routes() -> Router<AppState> {
     Router::new()
       .route("/", routing::get(get))
+      .route("/", routing::put(put))
   }
 
   async fn get() -> Result<Json<ServiceStatus>> {
     let status = get_status();
 
     Ok(Json(status))
+  }
+
+  async fn put(extract::Json(status): extract::Json<ServiceStatus>) -> Result<Json<ServiceStatus>> {
+    match status.active {
+      ActiveState::Active => {
+        Ok(Json(squid::set_running(true)?))
+      },
+      ActiveState::Inactive => {
+        Ok(Json(squid::set_running(false)?))
+      },
+      _ => {
+        Err(MyError::BadRequest("Can't put proxy into that state".to_string()))
+      }
+    }
   }
 }

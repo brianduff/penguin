@@ -9,8 +9,8 @@ import { gridStyle } from './commonstyles';
 import { CredentialsContext } from './components/GoogleAuth';
 import { useContext } from 'react';
 import { useQuery } from 'react-query';
-import { getProxyStatus } from './api';
-import { ActiveState } from './bindings/ServiceStatus';
+import { getProxyStatus, setProxyStatus } from './api';
+import { ActiveState, ServiceStatus } from './bindings/ServiceStatus';
 
 
 function App() {
@@ -20,7 +20,35 @@ function App() {
       .filter(m => Boolean((m.handle as any)?.crumb))
       .map(m => (m.handle as any).crumb(m.data));
 
-  let { isLoading, data } = useQuery("proxy", () => getProxyStatus());
+  let { isLoading, data } = useQuery("proxy", () => getProxyStatus(), {
+    refetchInterval: 2000,
+    refetchIntervalInBackground: false,
+  });
+
+  const onEnableProxy = async (enable: boolean) => {
+    let active = enable ? ActiveState.ACTIVE : ActiveState.INACTIVE;
+    let status : ServiceStatus = {
+      active
+    };
+    await setProxyStatus(status)
+  }
+
+  const proxyState = data?.unwrap().active;
+  var proxyStateMessage;
+  switch (proxyState) {
+    case ActiveState.ACTIVE:
+      proxyStateMessage = "Proxy is on";
+      break;
+    case ActiveState.INACTIVE:
+      proxyStateMessage = "Proxy is off";
+      break;
+    case ActiveState.DEACTIVATING:
+      proxyStateMessage = "Proxy stopping";
+      break;
+    default:
+      proxyStateMessage = "Proxy state unknown";
+      break;
+  }
 
   return (
     <>
@@ -32,7 +60,10 @@ function App() {
         </Navbar.Group>
         <Navbar.Group align={Alignment.RIGHT}>
           <span css={css`margin-right: 5px; padding-top: 8px;`}>
-              <Switch disabled={isLoading} checked={!isLoading && data?.unwrap().active == ActiveState.ACTIVE}>Proxy enabled</Switch>
+              <Switch
+                onChange={() => onEnableProxy(proxyState != ActiveState.ACTIVE)}
+                disabled={isLoading || proxyState == ActiveState.DEACTIVATING}
+                checked={!isLoading && proxyState == ActiveState.ACTIVE}>{proxyStateMessage}</Switch>
           </span>
           <Tooltip minimal={true} content={<span>Signed in as {credentials?.name}</span>}>
             <img src={credentials?.picture} css={css`width: 35px; border-radius: 50%; border: 1px solid`} />

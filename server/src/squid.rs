@@ -27,7 +27,7 @@ pub fn reload_config() {
   }
 }
 
-#[derive(PartialEq, Debug, Serialize)]
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
 pub enum ActiveState {
   Active,
   Deactivating,
@@ -35,9 +35,9 @@ pub enum ActiveState {
   Unknown,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ServiceStatus {
-  active: ActiveState,
+  pub active: ActiveState,
 }
 
 impl ServiceStatus {
@@ -95,11 +95,20 @@ pub fn get_status() -> ServiceStatus {
     }
   }
 
-  // if let Err(e) = output {
-  //   tracing::error!("Failed to HUP squid: {:?}", e);
-  // } else {
-  //   tracing::info!("Successfully sent HUP to squid");
-  // }
+}
+
+pub fn set_running(running: bool) -> Result<ServiceStatus> {
+  let instruction = match running {
+    true => "start",
+    false => "stop"
+  };
+
+  Command::new("sudo")
+    .args(["service", "squid", instruction])
+    .output()?;
+
+
+  Ok(get_status())
 }
 
 /// Gets all Squid logs by reading files in the log directory.

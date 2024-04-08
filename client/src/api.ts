@@ -101,3 +101,7 @@ export async function getProxyLogs(client: Client) {
 export async function getProxyStatus() {
   return get<ServiceStatus>("proxy")
 }
+
+export async function setProxyStatus(status: ServiceStatus) {
+  return req<ServiceStatus>("proxy", "PUT", status);
+}

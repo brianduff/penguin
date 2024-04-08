@@ -4,7 +4,7 @@ export interface ServiceStatus {
 
 export enum ActiveState {
   ACTIVE = "Active",
-  Deactivating = "Deactivating",
-  Inactive = "Inactive",
-  Unknown = "Unknown"
+  DEACTIVATING = "Deactivating",
+  INACTIVE = "Inactive",
+  UNKNOWN = "Unknown"
 }
