@@ -4,6 +4,7 @@ import { NetAccess } from "./bindings/NetAccess";
 import { LogEntry } from "./bindings/LogEntry";
 import { Result } from "./result";
 import { getGoogleCredential } from "./components/GoogleAuth";
+import { ServiceStatus } from "./bindings/ServiceStatus";
 
 var BASE_URL = "http://localhost:8080/";
 if (import.meta.env.PROD) {
@@ -95,4 +96,8 @@ export async function createNetAccess(netAccess: NetAccess) {
 
 export async function getProxyLogs(client: Client) {
   return get<Array<LogEntry>>(`logs/proxy?client_id=${client.id}`)
+}
+
+export async function getProxyStatus() {
+  return get<ServiceStatus>("proxy")
 }
