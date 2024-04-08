@@ -1,10 +1,17 @@
-use std::{process::Command, path::PathBuf, fs::File, io::{BufReader, Read}};
+use std::{
+  fs::File,
+  io::{BufReader, Read},
+  path::PathBuf,
+  process::Command,
+};
 
 use anyhow::{anyhow, Context, Result};
-use chrono::{DateTime, Utc, serde::ts_milliseconds};
+use chrono::{serde::ts_milliseconds, DateTime, Utc};
 use flate2::read::GzDecoder;
-use serde::{Serialize, Deserialize};
+use regex::Regex;
+use serde::{Deserialize, Serialize};
 use std::io::BufRead;
+use tracing::{error, warn};
 
 /// Request that squid reload its configuration.
 /// This requires an entry in /etc/sudoers, otherwise it'll prompt for a
@@ -18,6 +25,71 @@ pub fn reload_config() {
   } else {
     tracing::info!("Successfully sent HUP to squid");
   }
+}
+
+#[derive(PartialEq, Debug, Serialize)]
+pub enum ActiveState {
+  Active,
+  Deactivating,
+  Inactive,
+  Unknown,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ServiceStatus {
+  active: ActiveState,
+}
+
+impl ServiceStatus {
+  fn from_output(output: &str) -> ServiceStatus {
+    let re = Regex::new(r" +Active: ([^ ]+) ").unwrap();
+
+    let capture = re.captures_iter(output).next();
+
+    let active = if let Some(capture) = capture {
+      let status = capture.get(1);
+      if let Some(status) = status {
+        match status.as_str() {
+          "active" => ActiveState::Active,
+          "deactivating" => ActiveState::Deactivating,
+          "inactive" => ActiveState::Inactive,
+          _ => ActiveState::Unknown,
+        }
+      } else {
+        ActiveState::Unknown
+      }
+    } else {
+      warn!("Unexpected output from service status: {}", output);
+      ActiveState::Unknown
+    };
+
+    ServiceStatus { active }
+  }
+}
+
+/// Get the current status of the squid service.
+pub fn get_status() -> ServiceStatus {
+  let output = Command::new("service")
+    .args(["status", "squid"])
+    .output();
+
+  match output {
+    Ok(out) => {
+      ServiceStatus::from_output(&String::from_utf8(out.stdout).unwrap())
+    },
+    Err(e) => {
+      error!("Failed to get squid status: {:?}", e);
+      ServiceStatus {
+        active: ActiveState::Unknown
+      }
+    }
+  }
+
+  // if let Err(e) = output {
+  //   tracing::error!("Failed to HUP squid: {:?}", e);
+  // } else {
+  //   tracing::info!("Successfully sent HUP to squid");
+  // }
 }
 
 /// Gets all Squid logs by reading files in the log directory.
@@ -116,7 +188,6 @@ mod tests {
 
     let entry = LogEntry::parse(log_line)?;
 
-
     let date = Utc.with_ymd_and_hms(2023, 10, 4, 7, 14, 9).unwrap();
     let expected = LogEntry {
       date,
@@ -129,12 +200,71 @@ mod tests {
       request_url: "weather-data.apple.com:443".to_owned(),
       username: "-".to_owned(),
       peer_fqdn: "HIER_DIRECT/weather-data.apple.com".to_owned(),
-      mime_type: "-".to_owned()
+      mime_type: "-".to_owned(),
     };
 
     assert!(expected == entry);
 
     Ok(())
+  }
 
+  #[test]
+  fn check_status_active() {
+    let output = r#"
+    ● squid.service - Squid Web Proxy Server
+     Loaded: loaded (/lib/systemd/system/squid.service; enabled; vendor preset: enabled)
+     Active: active (running) since Mon 2024-03-04 23:28:53 PST; 2min 20s ago
+       Docs: man:squid(8)
+    Process: 4196 ExecStartPre=/usr/sbin/squid --foreground -z (code=exited, status=0/SUCCESS)
+   Main PID: 4200 (squid)
+      Tasks: 4 (limit: 1069)
+     Memory: 16.9M
+        CPU: 74ms
+     CGroup: /system.slice/squid.service
+             ├─4200 /usr/sbin/squid --foreground -sYC
+             ├─4202 "(squid-1)" --kid squid-1 --foreground -sYC
+             ├─4203 "(logfile-daemon)" /var/log/squid/access.log
+             └─4204 "(pinger)"
+
+  Notice: journal has been rotated since unit was started, output may be incomplete.
+    "#;
+
+    let status = ServiceStatus::from_output(output);
+    assert_eq!(status.active, ActiveState::Active);
+  }
+
+  #[test]
+  fn check_status_inactive() {
+    let output = r#"
+    ○ squid.service - Squid Web Proxy Server
+    Loaded: loaded (/lib/systemd/system/squid.service; enabled; vendor preset: enabled)
+    Active: inactive (dead) since Mon 2024-03-04 23:48:11 PST; 13s ago
+      Docs: man:squid(8)
+   Process: 4537 ExecStartPre=/usr/sbin/squid --foreground -z (code=exited, status=0/SUCCESS)
+   Process: 4540 ExecStart=/usr/sbin/squid --foreground -sYC (code=exited, status=0/SUCCESS)
+  Main PID: 4540 (code=exited, status=0/SUCCESS)
+       CPU: 107ms
+
+Mar 04 23:48:11 ambitious-mealworm squid[4542]:   Finished.  Wrote 0 entries.
+Mar 04 23:48:11 ambitious-mealworm squid[4542]:   Took 0.00 seconds (  0.00 entries/sec).
+Mar 04 23:48:11 ambitious-mealworm squid[4542]: Logfile: closing log daemon:/var/log/squid/ac>
+Mar 04 23:48:11 ambitious-mealworm squid[4542]: Logfile Daemon: closing log daemon:/var/log/s>
+Mar 04 23:48:11 ambitious-mealworm squid[4542]: Open FD UNSTARTED    10 IPC UNIX STREAM Parent
+Mar 04 23:48:11 ambitious-mealworm squid[4542]: Squid Cache (Version 5.7): Exiting normally.
+Mar 04 23:48:11 ambitious-mealworm squid[4540]: Squid Parent: squid-1 process 4542 exited wit>
+Mar 04 23:48:11 ambitious-mealworm squid[4540]: Removing PID file (/run/squid.pid)
+Mar 04 23:48:11 ambitious-mealworm systemd[1]: squid.service: Deactivated successfully.
+Mar 04 23:48:11 ambitious-mealworm systemd[1]: Stopped Squid Web Proxy Server.
+    "#;
+
+    let status = ServiceStatus::from_output(output);
+    assert_eq!(status.active, ActiveState::Inactive);
+  }
+
+  #[test]
+  fn check_status_unknown() {
+    let output = "Random stuff";
+    let status = ServiceStatus::from_output(output);
+    assert_eq!(status.active, ActiveState::Unknown);
   }
 }

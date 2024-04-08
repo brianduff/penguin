@@ -18,6 +18,7 @@ pub fn api_routes() -> Router<AppState> {
     .nest("/v1/domainlist", domains::routes())
     .nest("/v1/netaccess", netaccess::routes())
     .nest("/v1/logs/proxy", logs::proxy::routes())
+    .nest("/v1/proxy", proxy::routes())
 }
 
 mod clients {
@@ -373,5 +374,22 @@ mod logs {
 
       Ok(Json(logs))
     }
+  }
+}
+
+
+mod proxy {
+  use crate::squid::{get_status, ServiceStatus};
+  use super::*;
+
+  pub fn routes() -> Router<AppState> {
+    Router::new()
+      .route("/", routing::get(get))
+  }
+
+  async fn get(State(state): State<AppState>) -> Result<Json<ServiceStatus>> {
+    let status = get_status();
+
+    Ok(Json(status))
   }
 }
