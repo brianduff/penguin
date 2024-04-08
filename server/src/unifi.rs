@@ -5,7 +5,7 @@ use serde::{Serialize, Deserialize, de::DeserializeOwned};
 use serde_json::json;
 use anyhow::{anyhow, Result};
 use reqwest::StatusCode;
-use tracing::info;
+use tracing::{info, warn};
 
 pub struct UnifiClient {
   device_url: String,
@@ -74,7 +74,15 @@ impl UnifiClient {
   async fn handle_response<T: DeserializeOwned>(&mut self, response: Response) -> Result<T> {
     self.update_cookie(&response)?;
     response.error_for_status_ref()?;
-    Ok(response.json().await?)
+
+    let text = response.text().await?;
+
+    let parsed = serde_json::from_str::<T>(&text);
+    if let Err(ref e) = parsed {
+      warn!("Failed to parse response: {:?}\n{}", e, text);
+    }
+
+    Ok(parsed?)
   }
 
   async fn req_impl<RQ: Serialize, RS: DeserializeOwned>(&mut self, method: Method, path: &str, body: Option<&RQ>) -> Result<RS> {
